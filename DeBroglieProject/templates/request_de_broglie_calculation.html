@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Расчёт де Бройля</title>
+    <link rel="stylesheet" href="/static/styles/base.css"/>
+    <link rel="stylesheet" href="/static/styles/request_de_broglie_calculation_style.css"/>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="/static/img/phet_logo.png" alt="PhET Logo" class="image">
+            <div class="logo-divider"></div>
+            <img src="/static/img/uni_logo.png" alt="University Logo" class="image">
+        </div>
+        <a class="header-title" href="/particles">ДОМОЙ</a>
+    </div>
+    
+    <div class="particle-detail-container">
+        <h1>Расчёт № {{ .idRequestDeBroglieCalculation }}</h1>
+        
+        <div class="calculation-name-form">
+            <label for="calculationName">Название расчёта:</label>
+            <input type="text" id="calculationName" value="Эксперимент № {{ .idRequestDeBroglieCalculation }}" class="calculation-name-input">
+        </div>
+        
+        <div class="particle-list">
+            {{ range .calculations }}
+            {{ $currentCalc := . }}
+            <div class="particle-card-wrapper">
+                <div class="particle-card">
+                    <div class="particle-image-wrapper">
+                        {{ range $.particles }}
+                            {{if eq .ID $currentCalc.IDParticle}}
+                                <img src="{{ .Image }}" alt="{{ .Name }}" class="particle-detail-image">
+                            {{ end }}
+                        {{ end }}
+                    </div>
+                    
+                    <div class="particle-info-group-main">
+                        {{ range $.particles }}
+                            {{if eq .ID $currentCalc.IDParticle}}
+                                <p><strong>Название:</strong> {{ .Name }}</p>
+                                <p><strong>Масса:</strong> {{ .Mass }} кг</p>
+                                <a href="/particle/{{ .ID }}" class="card-button">Подробнее</a>
+                            {{ end }}
+                        {{ end }}
+                    </div>
+                    
+                    <div class="particle-info-group-speed">
+                        <p><strong>Скорость:</strong> <input type="number" value="{{ .Speed }}"/> м/с</p>
+                    </div>
+                    
+                    <div class="calculation-results-group">
+                        <p class="calculated-label">Длина волны Де Бройля:</p>
+                        <div class="calculated-value">{{ printf "%.2e" .Wavelength }} м</div>
+                    </div>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+    
+    <footer class="footer">© 2025 University of Colorado. Все права защищены.</footer>
+</body>
+</html>
