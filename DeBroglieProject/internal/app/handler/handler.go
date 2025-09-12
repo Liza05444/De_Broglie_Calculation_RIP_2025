@@ -23,21 +23,21 @@ func (h *Handler) GetParticles(ctx *gin.Context) {
 	var particles []repository.Particle
 	var err error
 
-	searchQuery := ctx.Query("query")
-	if searchQuery == "" {
+	searchParticle := ctx.Query("particle")
+	if searchParticle == "" {
 		particles, err = h.Repository.GetParticles()
 		if err != nil {
 			logrus.Error(err)
 		}
 	} else {
-		particles, err = h.Repository.GetParticleByName(searchQuery)
+		particles, err = h.Repository.GetParticleByName(searchParticle)
 		if err != nil {
 			logrus.Error(err)
 		}
 	}
 
 	requestID := 1
-	deBroglieCalculations, err := h.Repository.GetDeBroglieCalculationsForRequest(requestID)
+	_, deBroglieCalculations, err := h.Repository.GetDeBroglieCalculationsForRequest(requestID)
 	if err != nil {
 		logrus.Error(err)
 	}
@@ -45,7 +45,7 @@ func (h *Handler) GetParticles(ctx *gin.Context) {
 
 	ctx.HTML(http.StatusOK, "particles.html", gin.H{
 		"particles":                  particles,
-		"query":                      searchQuery,
+		"particle":                   searchParticle,
 		"deBroglieCalculationsCount": deBroglieCalculationsCount,
 	})
 }
@@ -74,7 +74,7 @@ func (h *Handler) GetDeBroglieCalculation(ctx *gin.Context) {
 		logrus.Error(err)
 	}
 
-	deBroglieCalculations, err := h.Repository.GetDeBroglieCalculationsForRequest(id)
+	requestDeBroglieCalculation, deBroglieCalculations, err := h.Repository.GetDeBroglieCalculationsForRequest(id)
 	if err != nil {
 		logrus.Error(err)
 	}
@@ -86,8 +86,8 @@ func (h *Handler) GetDeBroglieCalculation(ctx *gin.Context) {
 	}
 
 	ctx.HTML(http.StatusOK, "request_de_broglie_calculation.html", gin.H{
-		"idRequestDeBroglieCalculation": id,
-		"calculations":                  deBroglieCalculations,
-		"particles":                     particles,
+		"requestDeBroglieCalculation": requestDeBroglieCalculation,
+		"calculations": deBroglieCalculations,
+		"particles": particles,
 	})
 }

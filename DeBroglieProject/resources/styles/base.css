@@ -40,14 +40,6 @@ body {
     background: rgb(187, 187, 187);
 }
 
-.header-title {
-    text-decoration: none;
-}
-
-.header-title:hover {
-    color: #e01e5a;
-}
-
 .footer {
     background-color: #D2D2D2;
     width: 100%;

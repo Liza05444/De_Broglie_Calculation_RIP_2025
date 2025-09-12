@@ -98,18 +98,6 @@ var particles = []Particle{
 					 Поэтому открытие бозона и понимание его свойств представлялось ученым важнейшей задачей.`,
 		Image: "http://127.0.0.1:9000/particles/7.png",
 	},
-	{
-		ID:   8,
-		Name: "Z-бозон",
-		Mass: 1.625566e-25,
-		Description: `Z-бозон — фундаментальная частица-переносчик слабого взаимодействия.
-					 Название происходит от первой буквы английского слова Zero (ноль), что соответствует заряду частицы.
-					 Его открытие в 1983 году в ЦЕРНе считается одним из самых главных успехов стандартной модели.
-					 Масса Z-бозона почти в 97 раз больше, чем масса протона.
-					 У Z-бозона нет заряда ни одного из взаимодействий, поэтому единственным наблюдаемым эффектом от обмена Z-бозонами является импульс.
-					 `,
-		Image: "http://127.0.0.1:9000/particles/8.png",
-	},
 }
 
 func (r *Repository) GetParticles() ([]Particle, error) {
@@ -163,8 +151,8 @@ type DeBroglieCalculation struct {
 	Wavelength                    float64
 }
 
-var deBroglieCalculations = map[int][]DeBroglieCalculation{
-	1: {
+var requestDeBroglieCalculations = map[RequestDeBroglieCalculation][]DeBroglieCalculation{
+	{ID: 1, Name: "Эксперимент № 1"}: {
 		{
 			IDRequestDeBroglieCalculation: 1,
 			IDParticle:                    particles[0].ID,
@@ -184,7 +172,7 @@ var deBroglieCalculations = map[int][]DeBroglieCalculation{
 			Wavelength:                    3.956e-10,
 		},
 	},
-	2: {
+	{ID: 2, Name: "Эксперимент № 2"}: {
 		{
 			IDRequestDeBroglieCalculation: 2,
 			IDParticle:                    particles[2].ID,
@@ -192,15 +180,15 @@ var deBroglieCalculations = map[int][]DeBroglieCalculation{
 			Wavelength:                    3.956e-10,
 		},
 		{
-			IDRequestDeBroglieCalculation: 1,
+			IDRequestDeBroglieCalculation: 2,
 			IDParticle:                    particles[1].ID,
 			Speed:                         100000,
 			Wavelength:                    3.960e-12,
 		},
 	},
-	3: {
+	{ID: 3, Name: "Эксперимент № 3"}: {
 		{
-			IDRequestDeBroglieCalculation: 2,
+			IDRequestDeBroglieCalculation: 3,
 			IDParticle:                    particles[2].ID,
 			Speed:                         1000,
 			Wavelength:                    3.956e-10,
@@ -208,10 +196,11 @@ var deBroglieCalculations = map[int][]DeBroglieCalculation{
 	},
 }
 
-func (r *Repository) GetDeBroglieCalculationsForRequest(requestID int) ([]DeBroglieCalculation, error) {
-	calculations, ok := deBroglieCalculations[requestID]
-	if !ok {
-		return nil, fmt.Errorf("такой заявки нет")
+func (r *Repository) GetDeBroglieCalculationsForRequest(requestID int) (RequestDeBroglieCalculation, []DeBroglieCalculation, error) {
+	for req, calculations := range requestDeBroglieCalculations {
+		if req.ID == requestID {
+			return req, calculations, nil
+		}
 	}
-	return calculations, nil
+	return RequestDeBroglieCalculation{}, nil, fmt.Errorf("такой заявки нет")
 }

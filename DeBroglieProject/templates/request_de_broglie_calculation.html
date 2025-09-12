@@ -10,20 +10,19 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">
+        <a href="/particles" class="logo">
             <img src="/static/img/phet_logo.png" alt="PhET Logo" class="image">
             <div class="logo-divider"></div>
             <img src="/static/img/uni_logo.png" alt="University Logo" class="image">
-        </div>
-        <a class="header-title" href="/particles">ДОМОЙ</a>
+        </a>
     </div>
     
     <div class="particle-detail-container">
-        <h1>Расчёт № {{ .idRequestDeBroglieCalculation }}</h1>
+        <h1>Расчёт № {{ .requestDeBroglieCalculation.ID }}</h1>
         
         <div class="calculation-name-form">
             <label for="calculationName">Название расчёта:</label>
-            <input type="text" id="calculationName" value="Эксперимент № {{ .idRequestDeBroglieCalculation }}" class="calculation-name-input">
+            <input type="text" id="calculationName" value="{{ .requestDeBroglieCalculation.Name }}" class="calculation-name-input">
         </div>
         
         <div class="particle-list">
