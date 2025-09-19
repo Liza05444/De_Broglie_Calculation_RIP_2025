@@ -1,0 +1,116 @@
+h1 {
+    margin-bottom: 20px;
+}
+
+.particle-detail-container {
+    width: 60%;
+    margin: 20px auto;
+    text-align: center;
+}
+
+.calculation-name-form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.calculation-name-form label {
+    font-weight: bold;
+}
+
+.calculation-name-input {
+    padding: 8px 10px;
+    border: 1px solid #D2D2D2;
+    border-radius: 5px;
+    font-size: 16px;
+    outline: none;
+}
+
+.particle-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.particle-card-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.particle-card {
+    border: 1px solid #D2D2D2;
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: 150px 1fr auto auto;
+    gap: 20px;
+    padding: 20px;
+    max-width: 800px;
+}
+
+.particle-detail-image {
+    width: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.particle-info-group-main,
+.particle-info-group-speed,
+.calculation-results-group {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.calculated-value {
+    background-color: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    margin-top: 5px;
+}
+
+.card-button {
+    border-radius: 10px;
+    border: 1px solid #D2D2D2;
+    background-color: #F0F0F0;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 10px;
+    margin-top: 10px;
+}
+
+.particle-info-group-speed input[type="number"] {
+    width: 100px;
+    padding: 5px;
+    border: 1px solid #D2D2D2;
+    border-radius: 3px;
+    text-align: left;
+    font-size: 16px;
+}
+
+.main-delete-form {
+    display: flex;
+    justify-content: center;
+    margin: 0px auto 20px auto;
+    width: 60%;
+}
+
+.delete-button {
+    border-radius: 10px;
+    border: 1px solid #D2D2D2;
+    background-color: #F0F0F0;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 10px;
+    font-size: 16px;
+    cursor: pointer;
+}

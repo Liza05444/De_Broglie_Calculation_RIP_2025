@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ .particle.Name }}</title>
+    <link rel="stylesheet" href="/static/styles/base.css"/>
+    <link rel="stylesheet" href="/static/styles/particle_style.css"/>
+</head>
+<body>
+    <div class="header">
+        <a href="/particles" class="logo">
+            <img src="/static/img/phet_logo.png" alt="PhET Logo" class="image">
+            <div class="logo-divider"></div>
+            <img src="/static/img/uni_logo.png" alt="University Logo" class="image">
+        </a>
+    </div>
+    
+    <div class="particle-detail-container">
+        <h1>{{ .particle.Name }}</h1>
+        
+        <div class="particle-card">
+            <div class="particle-image-wrapper">
+                <img src="{{ .particle.Image.String }}" alt="{{ .particle.Name }}" class="particle-image">
+            </div>
+            <div class="particle-info-wrapper">
+                <p class="particle-detail-mass"><strong>Масса:</strong> {{ .particle.Mass }} кг</p>
+                <p class="particle-detail-description"><strong>Описание:</strong> {{ .particle.Description }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">© 2025 University of Colorado. Все права защищены.</footer>
+</body>
+</html>
