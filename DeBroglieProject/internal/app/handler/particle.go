@@ -59,3 +59,26 @@ func (h *Handler) GetParticle(ctx *gin.Context) {
 		"particle": particle,
 	})
 }
+
+func (h *Handler) AddParticleToRequest(ctx *gin.Context) {
+	particleIDStr := ctx.Param("id")
+	particleID, err := strconv.Atoi(particleIDStr)
+	if err != nil {
+		logrus.Error("Error converting particle ID:", err)
+	}
+
+	draftRequestDeBroglieCalculation, _, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo()
+	if err != nil {
+		_, err := h.Repository.CreateRequestDeBroglieCalculation(uint(particleID))
+		if err != nil {
+			logrus.Error("Error creating new draft request:", err)
+		}
+	} else {
+		err = h.Repository.AddDeBroglieCalculationToRequest(draftRequestDeBroglieCalculation.ID, uint(particleID))
+		if err != nil {
+			logrus.Error("Error adding particle to existing request:", err)
+		}
+	}
+
+	ctx.Redirect(http.StatusFound, "/particles")
+}

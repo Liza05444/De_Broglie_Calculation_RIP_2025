@@ -7,19 +7,19 @@ import (
 
 func (r *Repository) GetDraftRequestDeBroglieCalculationInfo() (ds.RequestDeBroglieCalculation, []ds.DeBroglieCalculation, error) {
 	creatorID := 1
-	
+
 	requestDeBroglieCalculation := ds.RequestDeBroglieCalculation{}
 	err := r.db.Where("creator_id = ? AND status = ?", creatorID, ds.RequestStatusDraft).First(&requestDeBroglieCalculation).Error
 	if err != nil {
 		return ds.RequestDeBroglieCalculation{}, nil, err
 	}
-	
+
 	var deBroglieCalculations []ds.DeBroglieCalculation
 	err = r.db.Where("request_de_broglie_calculation_id = ?", requestDeBroglieCalculation.ID).Find(&deBroglieCalculations).Error
 	if err != nil {
 		return ds.RequestDeBroglieCalculation{}, nil, err
 	}
-	
+
 	return requestDeBroglieCalculation, deBroglieCalculations, nil
 }
 

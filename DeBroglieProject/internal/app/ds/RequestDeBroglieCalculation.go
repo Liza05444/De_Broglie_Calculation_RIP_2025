@@ -16,9 +16,9 @@ const (
 )
 
 type RequestDeBroglieCalculation struct {
-	ID          uint          `gorm:"primaryKey"`
-	Name        string        `gorm:"type:varchar(150);not null"`
-	Status      RequestStatus `gorm:"type:varchar(50);not null;check:status IN ('черновик','удалён','сформирован','завершён','отклонён')"`
+	ID          uint          `gorm:"primaryKey;autoIncrement"`
+	Name        string        `gorm:"type:varchar(100);not null"`
+	Status      RequestStatus `gorm:"type:varchar(20);not null;check:status IN ('черновик','удалён','сформирован','завершён','отклонён')"`
 	CreatedAt   time.Time     `gorm:"not null"`
 	FormedAt    sql.NullTime  `gorm:"default:null"`
 	CompletedAt sql.NullTime  `gorm:"default:null"`
