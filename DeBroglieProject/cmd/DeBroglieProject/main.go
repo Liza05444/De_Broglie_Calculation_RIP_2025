@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"DeBroglieProject/internal/app/config"
 	"DeBroglieProject/internal/app/dsn"
 	"DeBroglieProject/internal/app/handler"
@@ -15,15 +13,24 @@ import (
 
 func main() {
 	router := gin.Default()
+
+	router.MaxMultipartMemory = 8 << 20 // 8 MB
+
 	conf, err := config.NewConfig()
 	if err != nil {
 		logrus.Fatalf("error loading config: %v", err)
 	}
 
 	postgresString := dsn.FromEnv()
-	fmt.Println(postgresString)
 
-	rep, errRep := repository.New(postgresString)
+	rep, errRep := repository.New(
+		postgresString,
+		conf.MinIO.Endpoint,
+		conf.MinIO.AccessKeyID,
+		conf.MinIO.SecretAccessKey,
+		conf.MinIO.BucketName,
+		conf.MinIO.UseSSL,
+	)
 	if errRep != nil {
 		logrus.Fatalf("error initializing repository: %v", errRep)
 	}

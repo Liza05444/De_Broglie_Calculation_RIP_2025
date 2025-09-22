@@ -17,18 +17,46 @@ func NewHandler(r *repository.Repository) *Handler {
 	}
 }
 
-func (h *Handler) RegisterHandler(router *gin.Engine) {
-	router.GET("/particles", h.GetParticles)
-	router.GET("/particle/:id", h.GetParticle)
-	router.POST("/de-broglie-calculation/:id/add-particle", h.AddParticleToRequest)
-	router.GET("/de-broglie-calculation/:id", h.GetRequestDeBroglieCalculation)
-	router.POST("/de-broglie-calculation/:id/delete-request", h.DeleteRequestDeBroglieCalculation)
-}
+func (h *Handler) RegisterAPI(router *gin.Engine) {
+	api := router.Group("/api")
+	{
+		profile := api.Group("/profile")
+		{
+			profile.POST("/register", h.RegisterUserAPI)
+			profile.POST("/login", h.LoginAPI)
+			profile.POST("/logout", h.LogoutAPI)
+			profile.GET("/me", h.GetMeAPI)
+			profile.PUT("/me", h.UpdateMeAPI)
+		}
 
-func (h *Handler) RegisterStatic(router *gin.Engine) {
-	router.LoadHTMLGlob("templates/*")
-	router.Static("/static/styles", "./resources/styles")
-	router.Static("/static/img", "./resources/img")
+		particles := api.Group("/particles")
+		{
+			particles.GET("", h.GetParticlesAPI)
+			particles.GET("/:id", h.GetParticleAPI)
+			particles.POST("", h.CreateParticleAPI)
+			particles.PUT("/:id", h.UpdateParticleAPI)
+			particles.DELETE("/:id", h.DeleteParticleAPI)
+			particles.POST("/:id/image", h.UploadParticleImageAPI)
+			particles.POST("/:id/addParticle", h.AddParticleToRequestDeBroglieCalculationAPI)
+		}
+
+		requests := api.Group("/requestdebrogliecalculations")
+		{
+			requests.GET("/cart", h.DraftRequestDeBroglieCalculationInfoAPI)
+			requests.GET("", h.GetRequestDeBroglieCalculationsAPI)
+			requests.GET("/:id", h.GetRequestDeBroglieCalculationAPI)
+			requests.PUT("/:id", h.UpdateRequestDeBroglieCalculationAPI)
+			requests.DELETE("/:id", h.DeleteRequestDeBroglieCalculationAPI)
+			requests.PUT("/:id/form", h.FormRequestDeBroglieCalculationAPI)
+			requests.PUT("/:id/complete", h.CompleteRequestDeBroglieCalculationAPI)
+		}
+
+		calculations := api.Group("/debrogliecalculations")
+		{
+			calculations.PUT("/:id/particle/:particleId", h.UpdateCalculationSpeedAPI)
+			calculations.DELETE("/:id/particle/:particleId", h.RemoveParticleFromRequestDeBroglieCalculationAPI)
+		}
+	}
 }
 
 func (h *Handler) errorHandler(ctx *gin.Context, errorStatusCode int, err error) {

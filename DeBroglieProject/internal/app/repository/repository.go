@@ -1,22 +1,52 @@
 package repository
 
 import (
+	"context"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type Repository struct {
-	db *gorm.DB
+	db      *gorm.DB
+	minio   *minio.Client
+	bucket  string
 }
 
-func New(dsn string) (*Repository, error) {
+func New(dsn string, minioEndpoint, minioAccessKey, minioSecretKey, bucketName string, useSSL bool) (*Repository, error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}) // подключаемся к БД
 	if err != nil {
 		return nil, err
 	}
 
-	// Возвращаем объект Repository с подключенной базой данных
+	// Инициализируем MinIO клиент
+	minioClient, err := minio.New(minioEndpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(minioAccessKey, minioSecretKey, ""),
+		Secure: useSSL,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Проверяем существование bucket и создаем если нужно
+	ctx := context.Background()
+	exists, err := minioClient.BucketExists(ctx, bucketName)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Возвращаем объект Repository с подключенной базой данных и MinIO клиентом
 	return &Repository{
-		db: db,
+		db:     db,
+		minio:  minioClient,
+		bucket: bucketName,
 	}, nil
 }

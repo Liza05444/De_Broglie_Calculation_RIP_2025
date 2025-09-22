@@ -11,6 +11,15 @@ import (
 type Config struct {
 	ServiceHost string
 	ServicePort int
+	MinIO       MinIOConfig
+}
+
+type MinIOConfig struct {
+	Endpoint        string
+	AccessKeyID     string
+	SecretAccessKey string
+	UseSSL          bool
+	BucketName      string
 }
 
 func NewConfig() (*Config, error) {
