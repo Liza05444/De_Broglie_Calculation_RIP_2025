@@ -26,6 +26,13 @@
         </div>
 
         <div class="particle-list">
+            <div class="particle-list-header">
+                <div class="header-image">Изображение</div>
+                <div class="header-name">Название</div>
+                <div class="header-mass">Масса</div>
+                <div class="header-speed">Скорость</div>
+                <div class="header-result">Длина волны де Бройля</div>
+            </div>
             {{ range .calculations }}
             {{ $currentCalc := . }}
             <div class="particle-card-wrapper">
@@ -38,22 +45,28 @@
                         {{ end }}
                     </div>
                     
-                    <div class="particle-info-group-main">
+                    <div class="particle-name-column">
                         {{ range $.particles }}
                             {{if eq .ID $currentCalc.ParticleID}}
-                                <p><strong>Название:</strong> {{ .Name }}</p>
-                                <p><strong>Масса:</strong> {{ .Mass }} кг</p>
+                                <p>{{ .Name }}</p>
                                 <a href="/particle/{{ .ID }}" class="card-button">Подробнее</a>
                             {{ end }}
                         {{ end }}
                     </div>
                     
-                    <div class="particle-info-group-speed">
-                        <p><strong>Скорость:</strong> <input type="number" value="{{ .Speed }}"/> м/с</p>
+                    <div class="particle-mass-column">
+                        {{ range $.particles }}
+                            {{if eq .ID $currentCalc.ParticleID}}
+                                <p>{{ .Mass }} кг</p>
+                            {{ end }}
+                        {{ end }}
                     </div>
                     
-                    <div class="calculation-results-group">
-                        <p class="calculated-label">Длина волны Де Бройля:</p>
+                    <div class="particle-speed-column">
+                        <p><input type="number" value="{{ .Speed }}"/> м/с</p>
+                    </div>
+                    
+                    <div class="particle-result-column">
                         <div class="calculated-value">{{ printf "%.2e" .DeBroglieLength.Float64 }} м</div>
                     </div>
                 </div>

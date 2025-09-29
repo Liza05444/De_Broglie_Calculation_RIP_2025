@@ -20,15 +20,23 @@ func (h *Handler) GetRequestDeBroglieCalculation(ctx *gin.Context) {
 	requestDeBroglieCalculation, deBroglieCalculations, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo()
 	if err != nil {
 		logrus.Error(err)
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "Заявка на расчёт длины де Бройля для частиц не найдена",
+		ctx.HTML(http.StatusNotFound, "particles.html", gin.H{
+			"particles": []ds.Particle{},
+			"particle": "",
+			"draftRequestID": 0,
+			"deBroglieCalculationsCount": 0,
+			"is404": true,
 		})
 		return
 	}
 
 	if requestDeBroglieCalculation.Status != ds.RequestStatusDraft {
-		ctx.JSON(http.StatusNotFound, gin.H{
-			"error": "Заявка на расчёт длины де Бройля для частиц не найдена",
+		ctx.HTML(http.StatusNotFound, "particles.html", gin.H{
+			"particles": []ds.Particle{},
+			"particle": "",
+			"draftRequestID": 0,
+			"deBroglieCalculationsCount": 0,
+			"is404": true,
 		})
 		return
 	}

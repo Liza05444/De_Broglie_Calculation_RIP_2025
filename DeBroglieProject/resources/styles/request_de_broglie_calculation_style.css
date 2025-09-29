@@ -34,6 +34,29 @@ h1 {
     gap: 20px;
 }
 
+.particle-list-header {
+    display: grid;
+    grid-template-columns: 150px 200px 140px 200px 200px;
+    gap: 20px;
+    padding: 10px 20px;
+    font-weight: bold;
+    background-color: #F8F9FA;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    margin: 0 auto 10px auto;
+}
+
+.header-image,
+.header-name,
+.header-mass,
+.header-speed,
+.header-result {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
 .particle-card-wrapper {
     display: flex;
     align-items: center;
@@ -44,10 +67,11 @@ h1 {
     border: 1px solid #D2D2D2;
     border-radius: 10px;
     display: grid;
-    grid-template-columns: 150px 1fr auto auto;
+    grid-template-columns: 150px 200px 140px 200px 200px;
     gap: 20px;
     padding: 20px;
-    max-width: 800px;
+    min-height: 170px;
+    align-items: center;
 }
 
 .particle-detail-image {
@@ -84,16 +108,18 @@ h1 {
     text-decoration: none;
     font-weight: 500;
     padding: 8px 10px;
-    margin-top: 10px;
+    margin-top: 15px;
+    display: inline-block;
 }
 
-.particle-info-group-speed input[type="number"] {
+.particle-speed-column input[type="number"] {
     width: 100px;
-    padding: 5px;
+    padding: 12px;
     border: 1px solid #D2D2D2;
     border-radius: 3px;
     text-align: left;
     font-size: 16px;
+    height: 18px;
 }
 
 .main-delete-form {

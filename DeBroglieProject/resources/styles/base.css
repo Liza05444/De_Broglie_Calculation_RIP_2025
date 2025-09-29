@@ -42,8 +42,8 @@ body {
 
 .footer {
     background-color: #D2D2D2;
-    width: 100%;
     text-align: center;
     padding: 30px;
     margin-top: auto;
+    box-sizing: border-box;
 }

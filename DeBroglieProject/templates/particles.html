@@ -17,6 +17,7 @@
         </a>
     </div>
 
+    {{ if not .is404 }}
     <div class="banner-container">
         <div class="banner">
             <img src="/static/img/banner.png" class="banner-image">
@@ -32,6 +33,7 @@
             </button>
         </form>
     </div>
+    {{ end }}
 
     <div class="space">
         <div class="container">
