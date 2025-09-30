@@ -38,10 +38,19 @@ func (h *Handler) GetRequestDeBroglieCalculationsAPI(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   requests,
-	})
+	var simplifiedRequests []gin.H
+	for _, req := range requests {
+		simplifiedRequests = append(simplifiedRequests, gin.H{
+			"id":           req.ID,
+			"name":         req.Name,
+			"status":       req.Status,
+			"created_at":   req.CreatedAt,
+			"formed_at":    req.FormedAt,
+			"completed_at": req.CompletedAt,
+		})
+	}
+
+	ctx.JSON(http.StatusOK, simplifiedRequests)
 }
 
 func (h *Handler) GetRequestDeBroglieCalculationAPI(ctx *gin.Context) {
@@ -62,12 +71,27 @@ func (h *Handler) GetRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 		return
 	}
 
+	var simplifiedCalcs []gin.H
+	for _, calc := range calcs {
+		simplifiedCalcs = append(simplifiedCalcs, gin.H{
+			"id":                  calc.ID,
+			"particle_id":         calc.ParticleID,
+			"particle_name":       calc.Particle.Name,
+			"particle_mass":       calc.Particle.Mass,
+			"particle_image":      calc.Particle.Image,
+			"speed":               calc.Speed,
+			"de_broglie_length":   calc.DeBroglieLength,
+		})
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data": gin.H{
-			"request":      request,
-			"calculations": calcs,
-		},
+		"id":           request.ID,
+		"name":         request.Name,
+		"status":       request.Status,
+		"created_at":   request.CreatedAt,
+		"formed_at":    request.FormedAt,
+		"completed_at": request.CompletedAt,
+		"calculations": simplifiedCalcs,
 	})
 }
 
@@ -168,20 +192,14 @@ func (h *Handler) DraftRequestDeBroglieCalculationInfoAPI(ctx *gin.Context) {
 	draft, calcs, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo()
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{
-			"status": "success",
-			"data": gin.H{
-				"draft_id":      0,
-				"particles_cnt": 0,
-			},
+			"draft_id":      0,
+			"particles_cnt": 0,
 		})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data": gin.H{
-			"draft_id":      draft.ID,
-			"particles_cnt": len(calcs),
-		},
+		"draft_id":      draft.ID,
+		"particles_cnt": len(calcs),
 	})
 }
 
@@ -209,12 +227,28 @@ func (h *Handler) CompleteRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
-	if err := h.Repository.CompleteRequest(uint(id), true); err != nil {
+
+	var req struct {
+		Approve bool `json:"approve"`
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
+
+	if err := h.Repository.CompleteRequest(uint(id), req.Approve); err != nil {
+		h.errorHandler(ctx, http.StatusBadRequest, err)
+		return
+	}
+
+	message := "Заявка отклонена"
+	if req.Approve {
+		message = "Заявка одобрена и обработана"
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": "Заявка обработана",
+		"message": message,
 	})
 }

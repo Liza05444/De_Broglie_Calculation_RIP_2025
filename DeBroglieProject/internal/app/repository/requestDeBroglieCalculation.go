@@ -2,7 +2,6 @@ package repository
 
 import (
 	"DeBroglieProject/internal/app/ds"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -142,7 +141,7 @@ func (r *Repository) calculateDeBroglieLengthsForRequest(requestID uint) error {
 
 	for _, calc := range calculations {
 		wavelength := r.calculateDeBroglieWavelength(calc.Particle.Mass, calc.Speed)
-		err = r.db.Model(&ds.DeBroglieCalculation{}).Where("id = ?", calc.ID).Update("de_broglie_length", sql.NullFloat64{Float64: wavelength, Valid: true}).Error
+		err = r.db.Model(&ds.DeBroglieCalculation{}).Where("id = ?", calc.ID).Update("de_broglie_length", &wavelength).Error
 		if err != nil {
 			return err
 		}
@@ -157,7 +156,7 @@ func (r *Repository) AddDeBroglieCalculationToRequest(requestID uint, particleID
 		RequestDeBroglieCalculationID: requestID,
 		ParticleID:                    particleID,
 		Speed:                         speed,
-		DeBroglieLength:               sql.NullFloat64{Valid: false},
+		DeBroglieLength:               nil,
 	}
 	err := r.db.Create(&deBroglieCalculation).Error
 	if err != nil {
@@ -200,13 +199,22 @@ func (r *Repository) CompleteRequest(id uint, approve bool) error {
 	status := ds.RequestStatusRejected
 	if approve {
 		status = ds.RequestStatusCompleted
-		err := r.calculateDeBroglieLengthsForRequest(id)
+	}
+	mod := ds.GetCreatorID()
+	
+	err := r.UpdateRequestStatus(id, status, &mod)
+	if err != nil {
+		return err
+	}
+	
+	if approve && status == ds.RequestStatusCompleted {
+		err = r.calculateDeBroglieLengthsForRequest(id)
 		if err != nil {
 			return err
 		}
 	}
-	mod := ds.GetCreatorID()
-	return r.UpdateRequestStatus(id, status, &mod)
+	
+	return nil
 }
 
 func (r *Repository) CreateRequestDeBroglieCalculationWithParticle(particleID uint) (ds.RequestDeBroglieCalculation, error) {

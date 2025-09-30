@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -23,10 +22,7 @@ func (h *Handler) GetParticlesAPI(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   particles,
-	})
+	ctx.JSON(http.StatusOK, particles)
 }
 
 func (h *Handler) GetParticleAPI(ctx *gin.Context) {
@@ -47,10 +43,7 @@ func (h *Handler) GetParticleAPI(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   particle,
-	})
+	ctx.JSON(http.StatusOK, particle)
 }
 
 func (h *Handler) CreateParticleAPI(ctx *gin.Context) {
@@ -69,10 +62,9 @@ func (h *Handler) CreateParticleAPI(ctx *gin.Context) {
 	particle := ds.Particle{
 		Name: input.Name,
 		Mass: input.Mass,
-		Description: sql.NullString{
-			String: input.Description,
-			Valid:  input.Description != "",
-		},
+	}
+	if input.Description != "" {
+		particle.Description = &input.Description
 	}
 
 	createdParticle, err := h.Repository.CreateParticle(particle)
@@ -81,10 +73,7 @@ func (h *Handler) CreateParticleAPI(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{
-		"status": "success",
-		"data":   createdParticle,
-	})
+	ctx.JSON(http.StatusCreated, createdParticle)
 }
 
 func (h *Handler) UpdateParticleAPI(ctx *gin.Context) {
@@ -110,10 +99,9 @@ func (h *Handler) UpdateParticleAPI(ctx *gin.Context) {
 	particle := ds.Particle{
 		Name: req.Name,
 		Mass: req.Mass,
-		Description: sql.NullString{
-			String: req.Description,
-			Valid:  req.Description != "",
-		},
+	}
+	if req.Description != "" {
+		particle.Description = &req.Description
 	}
 
 	err = h.Repository.UpdateParticle(uint(id), particle)
@@ -151,8 +139,8 @@ func (h *Handler) DeleteParticleAPI(ctx *gin.Context) {
 	}
 
 	// Удаляем изображение из MinIO, если оно существует
-	if particle.Image.Valid {
-		fileName := particle.Image.String
+	if particle.Image != nil {
+		fileName := *particle.Image
 		parts := strings.Split(fileName, "/")
 		if len(parts) > 0 {
 			fileName = parts[len(parts)-1]

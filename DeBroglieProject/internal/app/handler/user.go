@@ -19,10 +19,7 @@ func (h *Handler) RegisterUserAPI(ctx *gin.Context) {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{
-		"status": "success",
-		"data":   createdUser,
-	})
+	ctx.JSON(http.StatusCreated, createdUser)
 }
 
 func (h *Handler) LoginAPI(ctx *gin.Context) {
@@ -36,10 +33,7 @@ func (h *Handler) LoginAPI(ctx *gin.Context) {
 		h.errorHandler(ctx, http.StatusUnauthorized, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   authenticatedUser,
-	})
+	ctx.JSON(http.StatusOK, authenticatedUser)
 }
 
 func (h *Handler) LogoutAPI(ctx *gin.Context) {
@@ -56,10 +50,7 @@ func (h *Handler) GetMeAPI(ctx *gin.Context) {
 		h.errorHandler(ctx, http.StatusNotFound, err)
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   user,
-	})
+	ctx.JSON(http.StatusOK, user)
 }
 
 func (h *Handler) UpdateMeAPI(ctx *gin.Context) {
@@ -74,8 +65,5 @@ func (h *Handler) UpdateMeAPI(ctx *gin.Context) {
 		return
 	}
 	updatedUser, _ := h.Repository.GetUserByID(meID)
-	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data":   updatedUser,
-	})
+	ctx.JSON(http.StatusOK, updatedUser)
 }
