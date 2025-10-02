@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,8 +10,22 @@ import (
 	"DeBroglieProject/internal/app/ds"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
+// GetRequestDeBroglieCalculationsAPI godoc
+// @Summary Получение списка заявок
+// @Description Возвращает список заявок на расчет с возможностью фильтрации
+// @Tags RequestDeBroglieCalculations
+// @Produce json
+// @Security BearerAuth
+// @Param status query string false "Статус заявки"
+// @Param start_date query string false "Начальная дата (YYYY-MM-DD)"
+// @Param end_date query string false "Конечная дата (YYYY-MM-DD)"
+// @Success 200 {array} ds.RequestDeBroglieCalculation "Список заявок"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /requestdebrogliecalculations [get]
 func (h *Handler) GetRequestDeBroglieCalculationsAPI(ctx *gin.Context) {
 	var status *ds.RequestStatus
 	var startDate, endDate *time.Time
@@ -32,27 +47,52 @@ func (h *Handler) GetRequestDeBroglieCalculationsAPI(ctx *gin.Context) {
 		}
 	}
 
-	requests, err := h.Repository.GetRequestDeBroglieCalculations(status, startDate, endDate)
+	userUUID, exists := ctx.Get("user_uuid")
+	if !exists {
+		h.errorHandler(ctx, http.StatusUnauthorized, errors.New("user not authenticated"))
+		return
+	}
+
+	creatorID, ok := userUUID.(uuid.UUID)
+	if !ok {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
+		return
+	}
+
+	isModerator, exists := ctx.Get("is_moderator")
+	if !exists {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("moderator status not found in context"))
+		return
+	}
+
+	moderatorStatus, ok := isModerator.(bool)
+	if !ok {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid moderator status in context"))
+		return
+	}
+
+	requests, err := h.Repository.GetRequestDeBroglieCalculations(status, startDate, endDate, creatorID, moderatorStatus)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
 	}
 
-	var simplifiedRequests []gin.H
-	for _, req := range requests {
-		simplifiedRequests = append(simplifiedRequests, gin.H{
-			"id":           req.ID,
-			"name":         req.Name,
-			"status":       req.Status,
-			"created_at":   req.CreatedAt,
-			"formed_at":    req.FormedAt,
-			"completed_at": req.CompletedAt,
-		})
-	}
-
-	ctx.JSON(http.StatusOK, simplifiedRequests)
+	ctx.JSON(http.StatusOK, requests)
 }
 
+// GetRequestDeBroglieCalculationAPI godoc
+// @Summary Получение заявки по ID
+// @Description Возвращает детальную информацию о заявке с расчетами
+// @Tags RequestDeBroglieCalculations
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Success 200 {object} deBroglieRequestDetailResponse "Детальная информация о заявке"
+// @Failure 400 {object} errorResponse "Неверный ID"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 404 {object} errorResponse "Заявка не найдена"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /requestdebrogliecalculations/{id} [get]
 func (h *Handler) GetRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -71,30 +111,45 @@ func (h *Handler) GetRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 		return
 	}
 
-	var simplifiedCalcs []gin.H
+	var deBroglieCalcs []gin.H
 	for _, calc := range calcs {
-		simplifiedCalcs = append(simplifiedCalcs, gin.H{
-			"id":                  calc.ID,
-			"particle_id":         calc.ParticleID,
-			"particle_name":       calc.Particle.Name,
-			"particle_mass":       calc.Particle.Mass,
-			"particle_image":      calc.Particle.Image,
-			"speed":               calc.Speed,
-			"de_broglie_length":   calc.DeBroglieLength,
+		deBroglieCalcs = append(deBroglieCalcs, gin.H{
+			"id":                calc.ID,
+			"particle_id":       calc.ParticleID,
+			"particle_name":     calc.Particle.Name,
+			"particle_mass":     calc.Particle.Mass,
+			"particle_image":    calc.Particle.Image,
+			"speed":             calc.Speed,
+			"de_broglie_length": calc.DeBroglieLength,
 		})
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"id":           request.ID,
-		"name":         request.Name,
-		"status":       request.Status,
-		"created_at":   request.CreatedAt,
-		"formed_at":    request.FormedAt,
-		"completed_at": request.CompletedAt,
-		"calculations": simplifiedCalcs,
+		"id":                    request.ID,
+		"name":                  request.Name,
+		"status":                request.Status,
+		"created_at":            request.CreatedAt,
+		"formed_at":             request.FormedAt,
+		"completed_at":          request.CompletedAt,
+		"debrogliecalculations": deBroglieCalcs,
 	})
 }
 
+// UpdateRequestDeBroglieCalculationAPI godoc
+// @Summary Обновление заявки
+// @Description Обновляет информацию о заявке
+// @Tags RequestDeBroglieCalculations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Param request body ds.RequestDeBroglieCalculation true "Обновленные данные заявки"
+// @Success 200 {object} successResponse "Успешное обновление"
+// @Failure 400 {object} errorResponse "Неверный формат запроса"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 404 {object} errorResponse "Заявка не найдена"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /requestdebrogliecalculations/{id} [put]
 func (h *Handler) UpdateRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -120,11 +175,23 @@ func (h *Handler) UpdateRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Заявка обновлена",
+		"message": "заявка обновлена",
 	})
 }
 
+// DeleteRequestDeBroglieCalculationAPI godoc
+// @Summary Удаление заявки
+// @Description Удаляет заявку на расчет
+// @Tags RequestDeBroglieCalculations
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Success 200 {object} successResponse "Успешное удаление"
+// @Failure 400 {object} errorResponse "Неверный ID"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 404 {object} errorResponse "Заявка не найдена"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /requestdebrogliecalculations/{id} [delete]
 func (h *Handler) DeleteRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -149,8 +216,7 @@ func (h *Handler) DeleteRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Заявка удалена",
+		"message": "заявка удалена",
 	})
 }
 
@@ -164,7 +230,7 @@ func (h *Handler) UpdateRequestStatusAPI(ctx *gin.Context) {
 
 	var req struct {
 		Status      ds.RequestStatus `json:"status" binding:"required"`
-		ModeratorID *uint            `json:"moderator_id,omitempty"`
+		ModeratorID *uuid.UUID       `json:"moderator_id,omitempty"`
 	}
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -172,7 +238,7 @@ func (h *Handler) UpdateRequestStatusAPI(ctx *gin.Context) {
 		return
 	}
 
-	err = h.Repository.UpdateRequestStatus(uint(id), req.Status, req.ModeratorID)
+	err = h.Repository.UpdateDeBroglieRequestStatus(uint(id), req.Status, req.ModeratorID)
 	if err != nil {
 		if err.Error() == "record not found" {
 			h.errorHandler(ctx, http.StatusNotFound, err)
@@ -183,13 +249,35 @@ func (h *Handler) UpdateRequestStatusAPI(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Статус заявки обновлен",
+		"message": "статус заявки обновлен",
 	})
 }
 
+// DraftRequestDeBroglieCalculationInfoAPI godoc
+// @Summary Информация о черновике заявки
+// @Description Возвращает информацию о черновике заявки пользователя
+// @Tags RequestDeBroglieCalculations
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} deBroglieDraftInfoResponse "Информация о черновике"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /requestdebrogliecalculations/debrogliecart [get]
 func (h *Handler) DraftRequestDeBroglieCalculationInfoAPI(ctx *gin.Context) {
-	draft, calcs, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo()
+	// Получаем UUID пользователя из контекста
+	userUUID, exists := ctx.Get("user_uuid")
+	if !exists {
+		h.errorHandler(ctx, http.StatusUnauthorized, errors.New("user not authenticated"))
+		return
+	}
+
+	creatorID, ok := userUUID.(uuid.UUID)
+	if !ok {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
+		return
+	}
+
+	draft, calcs, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo(creatorID)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{
 			"draft_id":      0,
@@ -203,6 +291,18 @@ func (h *Handler) DraftRequestDeBroglieCalculationInfoAPI(ctx *gin.Context) {
 	})
 }
 
+// FormRequestDeBroglieCalculationAPI godoc
+// @Summary Формирование заявки
+// @Description Переводит черновик заявки в статус "сформирована"
+// @Tags RequestDeBroglieCalculations
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Success 200 {object} successResponse "Успешное формирование"
+// @Failure 400 {object} errorResponse "Неверный ID или статус заявки"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /requestdebrogliecalculations/{id}/form [put]
 func (h *Handler) FormRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -210,16 +310,43 @@ func (h *Handler) FormRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
-	if err := h.Repository.FormDraft(uint(id)); err != nil {
+
+	userUUID, exists := ctx.Get("user_uuid")
+	if !exists {
+		h.errorHandler(ctx, http.StatusUnauthorized, errors.New("user not authenticated"))
+		return
+	}
+
+	creatorID, ok := userUUID.(uuid.UUID)
+	if !ok {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
+		return
+	}
+
+	if err := h.Repository.FormDeBroglieRequestDraft(uint(id), creatorID); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Заявка сформирована",
+		"message": "заявка сформирована",
 	})
 }
 
+// CompleteRequestDeBroglieCalculationAPI godoc
+// @Summary Завершение заявки модератором
+// @Description Одобряет или отклоняет заявку (только для модераторов)
+// @Tags RequestDeBroglieCalculations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Param request body object{approve=boolean} true "Решение модератора"
+// @Success 200 {object} successResponse "Успешное завершение"
+// @Failure 400 {object} errorResponse "Неверный формат запроса"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 403 {object} errorResponse "Недостаточно прав"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /requestdebrogliecalculations/{id}/complete [put]
 func (h *Handler) CompleteRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -237,18 +364,29 @@ func (h *Handler) CompleteRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.Repository.CompleteRequest(uint(id), req.Approve); err != nil {
+	userUUID, exists := ctx.Get("user_uuid")
+	if !exists {
+		h.errorHandler(ctx, http.StatusUnauthorized, errors.New("user not authenticated"))
+		return
+	}
+
+	moderatorID, ok := userUUID.(uuid.UUID)
+	if !ok {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
+		return
+	}
+
+	if err := h.Repository.CompleteDeBroglieRequest(uint(id), req.Approve, moderatorID); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
 
-	message := "Заявка отклонена"
+	message := "заявка отклонена"
 	if req.Approve {
-		message = "Заявка одобрена и обработана"
+		message = "заявка одобрена и обработана"
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
 		"message": message,
 	})
 }

@@ -9,6 +9,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// UpdateCalculationSpeedAPI godoc
+// @Summary Обновление скорости частицы
+// @Description Обновляет скорость частицы в расчете де Бройля
+// @Tags DeBroglieCalculations
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Param particleId path int true "ID частицы"
+// @Param request body object{speed=number} true "Новая скорость"
+// @Success 200 {object} successResponse "Успешное обновление"
+// @Failure 400 {object} errorResponse "Неверные параметры или статус заявки"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 404 {object} errorResponse "Заявка не найдена"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /debrogliecalculations/{id}/particle/{particleId} [put]
 func (h *Handler) UpdateCalculationSpeedAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	particleIdStr := ctx.Param("particleId")
@@ -47,11 +63,24 @@ func (h *Handler) UpdateCalculationSpeedAPI(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Скорость обновлена",
+		"message": "скорость обновлена",
 	})
 }
 
+// RemoveParticleFromRequestDeBroglieCalculationAPI godoc
+// @Summary Удаление частицы из заявки
+// @Description Удаляет частицу из черновика заявки
+// @Tags DeBroglieCalculations
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID заявки"
+// @Param particleId path int true "ID частицы"
+// @Success 200 {object} successResponse "Успешное удаление"
+// @Failure 400 {object} errorResponse "Неверные параметры или статус заявки"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 404 {object} errorResponse "Заявка или частица не найдена"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /debrogliecalculations/{id}/particle/{particleId} [delete]
 func (h *Handler) RemoveParticleFromRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	particleIdStr := ctx.Param("particleId")
@@ -88,7 +117,6 @@ func (h *Handler) RemoveParticleFromRequestDeBroglieCalculationAPI(ctx *gin.Cont
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Частица удалена из заявки",
+		"message": "частица удалена из заявки",
 	})
 }

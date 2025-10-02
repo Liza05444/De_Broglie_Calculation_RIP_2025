@@ -2,20 +2,13 @@ package repository
 
 import (
 	"DeBroglieProject/internal/app/ds"
-	"errors"
+
+	"github.com/google/uuid"
 )
 
-func (r *Repository) CreateUser(user ds.User) (ds.User, error) {
-	if user.Name == "" {
-		user.Name = "Пользователь"
-	}
-	err := r.db.Create(&user).Error
-	return user, err
-}
-
-func (r *Repository) GetUserByID(id uint) (ds.User, error) {
+func (r *Repository) GetUserByUUID(uuid uuid.UUID) (ds.User, error) {
 	var u ds.User
-	err := r.db.First(&u, id).Error
+	err := r.db.Where("id = ?", uuid).First(&u).Error
 	return u, err
 }
 
@@ -25,19 +18,15 @@ func (r *Repository) GetUserByEmail(email string) (ds.User, error) {
 	return u, err
 }
 
-func (r *Repository) UpdateUser(id uint, user ds.User) error {
+func (r *Repository) UpdateUserByUUID(uuid uuid.UUID, user ds.User) error {
 	updates := map[string]interface{}{"name": user.Name}
 	updates["is_moderator"] = user.IsModerator
-	return r.db.Model(&ds.User{}).Where("id = ?", id).Updates(updates).Error
+	return r.db.Model(&ds.User{}).Where("id = ?", uuid).Updates(updates).Error
 }
 
-func (r *Repository) CheckCredentials(email, password string) (ds.User, error) {
-	u, err := r.GetUserByEmail(email)
-	if err != nil {
-		return ds.User{}, err
+func (r *Repository) Register(user *ds.User) error {
+	if user.ID == uuid.Nil {
+		user.ID = uuid.New()
 	}
-	if u.Password != password {
-		return ds.User{}, errors.New("invalid credentials")
-	}
-	return u, nil
+	return r.db.Create(user).Error
 }

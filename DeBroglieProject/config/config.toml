@@ -7,3 +7,12 @@ AccessKeyID = "minioadmin"
 SecretAccessKey = "minioadmin"
 UseSSL = false
 BucketName = "particles"
+
+[JWT]
+Token = "test"
+ExpiresIn = "1h"
+SigningMethod = "HS256"
+
+[Redis]
+DialTimeout = "10s"
+ReadTimeout = "10s"

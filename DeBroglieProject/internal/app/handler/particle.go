@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,8 +12,18 @@ import (
 	"DeBroglieProject/internal/app/ds"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
+// GetParticlesAPI godoc
+// @Summary Получение списка частиц
+// @Description Возвращает список всех частиц с возможностью фильтрации по названию
+// @Tags Particles
+// @Produce json
+// @Param particle query string false "Название частицы для фильтрации"
+// @Success 200 {array} ds.Particle "Список частиц"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /particles [get]
 func (h *Handler) GetParticlesAPI(ctx *gin.Context) {
 	particleName := ctx.Query("particle")
 
@@ -25,6 +36,17 @@ func (h *Handler) GetParticlesAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, particles)
 }
 
+// GetParticleAPI godoc
+// @Summary Получение частицы по ID
+// @Description Возвращает информацию о частице по её ID
+// @Tags Particles
+// @Produce json
+// @Param id path int true "ID частицы"
+// @Success 200 {object} ds.Particle "Информация о частице"
+// @Failure 400 {object} errorResponse "Неверный ID"
+// @Failure 404 {object} errorResponse "Частица не найдена"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /particles/{id} [get]
 func (h *Handler) GetParticleAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -46,6 +68,20 @@ func (h *Handler) GetParticleAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, particle)
 }
 
+// CreateParticleAPI godoc
+// @Summary Создание новой частицы
+// @Description Создает новую частицу (только для модераторов)
+// @Tags Particles
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{name=string,mass=number,description=string} true "Данные частицы"
+// @Success 201 {object} ds.Particle "Созданная частица"
+// @Failure 400 {object} errorResponse "Неверный формат запроса"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 403 {object} errorResponse "Недостаточно прав"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /particles [post]
 func (h *Handler) CreateParticleAPI(ctx *gin.Context) {
 	type particleInput struct {
 		Name        string  `json:"name" binding:"required"`
@@ -76,6 +112,22 @@ func (h *Handler) CreateParticleAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, createdParticle)
 }
 
+// UpdateParticleAPI godoc
+// @Summary Обновление частицы
+// @Description Обновляет информацию о частице (только для модераторов)
+// @Tags Particles
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID частицы"
+// @Param request body object{name=string,mass=number,description=string} true "Обновленные данные частицы"
+// @Success 200 {object} successResponse "Успешное обновление"
+// @Failure 400 {object} errorResponse "Неверный формат запроса"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 403 {object} errorResponse "Недостаточно прав"
+// @Failure 404 {object} errorResponse "Частица не найдена"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /particles/{id} [put]
 func (h *Handler) UpdateParticleAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -115,11 +167,24 @@ func (h *Handler) UpdateParticleAPI(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Частица обновлена",
+		"message": "частица обновлена",
 	})
 }
 
+// DeleteParticleAPI godoc
+// @Summary Удаление частицы
+// @Description Удаляет частицу и связанное с ней изображение (только для модераторов)
+// @Tags Particles
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID частицы"
+// @Success 200 {object} successResponse "Успешное удаление"
+// @Failure 400 {object} errorResponse "Неверный ID"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 403 {object} errorResponse "Недостаточно прав"
+// @Failure 404 {object} errorResponse "Частица не найдена"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /particles/{id} [delete]
 func (h *Handler) DeleteParticleAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -164,11 +229,26 @@ func (h *Handler) DeleteParticleAPI(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "Частица удалена",
+		"message": "частица удалена",
 	})
 }
 
+// UploadParticleImageAPI godoc
+// @Summary Загрузка изображения частицы
+// @Description Загружает изображение для частицы в MinIO (только для модераторов)
+// @Tags Particles
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID частицы"
+// @Param image formData file true "Файл изображения"
+// @Success 200 {object} successResponse "Успешная загрузка"
+// @Failure 400 {object} errorResponse "Неверный формат запроса"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 403 {object} errorResponse "Недостаточно прав"
+// @Failure 404 {object} errorResponse "Частица не найдена"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /particles/{id}/image [post]
 func (h *Handler) UploadParticleImageAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -224,12 +304,22 @@ func (h *Handler) UploadParticleImageAPI(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":     "success",
-		"message":    "Изображение загружено",
-		"image_path": imagePath,
+		"message": "изображение загружено",
 	})
 }
 
+// AddParticleToRequestDeBroglieCalculationAPI godoc
+// @Summary Добавление частицы в заявку
+// @Description Добавляет частицу в черновик заявки на расчет де Бройля
+// @Tags Particles
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID частицы"
+// @Success 200 {object} successResponse "Успешное добавление"
+// @Failure 400 {object} errorResponse "Неверный ID или частица уже добавлена"
+// @Failure 401 {object} errorResponse "Требуется авторизация"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /particles/{id}/addParticle [post]
 func (h *Handler) AddParticleToRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
@@ -238,9 +328,21 @@ func (h *Handler) AddParticleToRequestDeBroglieCalculationAPI(ctx *gin.Context) 
 		return
 	}
 
-	draft, _, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo()
+	userUUID, exists := ctx.Get("user_uuid")
+	if !exists {
+		h.errorHandler(ctx, http.StatusUnauthorized, errors.New("user not authenticated"))
+		return
+	}
+
+	creatorID, ok := userUUID.(uuid.UUID)
+	if !ok {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
+		return
+	}
+
+	draft, _, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo(creatorID)
 	if err != nil {
-		created, createErr := h.Repository.CreateRequestDeBroglieCalculationWithParticle(uint(id))
+		_, createErr := h.Repository.CreateRequestDeBroglieCalculationWithParticle(uint(id), creatorID)
 		if createErr != nil {
 			if strings.Contains(createErr.Error(), "duplicate key value violates unique constraint") {
 				h.errorHandler(ctx, http.StatusBadRequest, fmt.Errorf("частица уже добавлена в заявку"))
@@ -250,9 +352,7 @@ func (h *Handler) AddParticleToRequestDeBroglieCalculationAPI(ctx *gin.Context) 
 			return
 		}
 		ctx.JSON(http.StatusOK, gin.H{
-			"status":   "success",
-			"message":  "Частица добавлена в новую заявку",
-			"draft_id": created.ID,
+			"message": "частица добавлена в новую заявку",
 		})
 		return
 	}
@@ -272,8 +372,6 @@ func (h *Handler) AddParticleToRequestDeBroglieCalculationAPI(ctx *gin.Context) 
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status":   "success",
-		"message":  "Частица добавлена в заявку",
-		"draft_id": draft.ID,
+		"message": "частица добавлена в заявку",
 	})
 }

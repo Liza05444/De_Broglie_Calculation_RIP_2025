@@ -1,51 +1,40 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"DeBroglieProject/internal/app/ds"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
-func (h *Handler) RegisterUserAPI(ctx *gin.Context) {
-	var user ds.User
-	if err := ctx.ShouldBindJSON(&user); err != nil {
-		h.errorHandler(ctx, http.StatusBadRequest, err)
-		return
-	}
-	createdUser, err := h.Repository.CreateUser(user)
-	if err != nil {
-		h.errorHandler(ctx, http.StatusBadRequest, err)
-		return
-	}
-	ctx.JSON(http.StatusCreated, createdUser)
-}
-
-func (h *Handler) LoginAPI(ctx *gin.Context) {
-	var user ds.User
-	if err := ctx.ShouldBindJSON(&user); err != nil {
-		h.errorHandler(ctx, http.StatusBadRequest, err)
-		return
-	}
-	authenticatedUser, err := h.Repository.CheckCredentials(user.Email, user.Password)
-	if err != nil {
-		h.errorHandler(ctx, http.StatusUnauthorized, err)
-		return
-	}
-	ctx.JSON(http.StatusOK, authenticatedUser)
-}
-
-func (h *Handler) LogoutAPI(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"message": "logged out",
-	})
-}
-
+// GetMeAPI godoc
+// @Summary Получение информации о текущем пользователе
+// @Description Возвращает информацию о авторизованном пользователе
+// @Tags Profile
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} ds.User "Информация о пользователе"
+// @Failure 401 {object} errorResponse "Пользователь не авторизован"
+// @Failure 404 {object} errorResponse "Пользователь не найден"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /profile/me [get]
 func (h *Handler) GetMeAPI(ctx *gin.Context) {
-	meID := ds.GetCreatorID()
-	user, err := h.Repository.GetUserByID(meID)
+	userUUID, exists := ctx.Get("user_uuid")
+	if !exists {
+		h.errorHandler(ctx, http.StatusUnauthorized, errors.New("user not authenticated"))
+		return
+	}
+
+	meID, ok := userUUID.(uuid.UUID)
+	if !ok {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
+		return
+	}
+
+	user, err := h.Repository.GetUserByUUID(meID)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusNotFound, err)
 		return
@@ -53,17 +42,46 @@ func (h *Handler) GetMeAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, user)
 }
 
+// UpdateMeAPI godoc
+// @Summary Обновление информации о текущем пользователе
+// @Description Обновляет информацию о авторизованном пользователе
+// @Tags Profile
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body ds.User true "Данные для обновления"
+// @Success 200 {object} ds.User "Обновленная информация о пользователе"
+// @Failure 400 {object} errorResponse "Неверный формат запроса"
+// @Failure 401 {object} errorResponse "Пользователь не авторизован"
+// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
+// @Router /profile/me [put]
 func (h *Handler) UpdateMeAPI(ctx *gin.Context) {
-	meID := ds.GetCreatorID()
+	userUUID, exists := ctx.Get("user_uuid")
+	if !exists {
+		h.errorHandler(ctx, http.StatusUnauthorized, errors.New("user not authenticated"))
+		return
+	}
+
+	meID, ok := userUUID.(uuid.UUID)
+	if !ok {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
+		return
+	}
+
 	var user ds.User
 	if err := ctx.ShouldBindJSON(&user); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
-	if err := h.Repository.UpdateUser(meID, user); err != nil {
+	if err := h.Repository.UpdateUserByUUID(meID, user); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
-	updatedUser, _ := h.Repository.GetUserByID(meID)
+
+	updatedUser, err := h.Repository.GetUserByUUID(meID)
+	if err != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("failed to retrieve updated user data"))
+		return
+	}
 	ctx.JSON(http.StatusOK, updatedUser)
 }
