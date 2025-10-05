@@ -134,7 +134,10 @@ func (h *Handler) Login(gCtx *gin.Context) {
 		return
 	}
 
-	gCtx.AbortWithStatus(http.StatusForbidden)
+	gCtx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+		"status":      "error",
+		"description": "invalid email or password",
+	})
 }
 
 // Register godoc

@@ -17,7 +17,7 @@ const (
 
 type RequestDeBroglieCalculation struct {
 	ID          uint       `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name        string     `gorm:"type:varchar(100);not null" json:"name"`
+	Name        *string    `gorm:"type:varchar(100)" json:"name,omitempty"`
 	Status      RequestStatus `gorm:"type:varchar(20);not null;check:status IN ('черновик','удалён','сформирован','завершён','отклонён')" json:"status"`
 	CreatedAt   time.Time  `gorm:"not null" json:"created_at"`
 	FormedAt    *time.Time `gorm:"default:null" json:"formed_at,omitempty"`

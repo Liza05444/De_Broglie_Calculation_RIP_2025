@@ -17,7 +17,7 @@ func (a *Application) WithAuthCheck(requireModerator bool) func(ctx *gin.Context
 	return func(gCtx *gin.Context) {
 		jwtStr := gCtx.GetHeader("Authorization")
 		if !strings.HasPrefix(jwtStr, jwtPrefix) {
-			gCtx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			gCtx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"status":      "error",
 				"description": "authorization header missing or invalid format",
 			})
@@ -29,7 +29,7 @@ func (a *Application) WithAuthCheck(requireModerator bool) func(ctx *gin.Context
 		ctx := context.Background()
 		_, err := a.Redis.GetClient().Get(ctx, "blacklist:"+jwtStr).Result()
 		if err == nil {
-			gCtx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			gCtx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"status":      "error",
 				"description": "token has been revoked",
 			})
@@ -40,7 +40,7 @@ func (a *Application) WithAuthCheck(requireModerator bool) func(ctx *gin.Context
 			return []byte(a.Config.JWT.Token), nil
 		})
 		if err != nil {
-			gCtx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			gCtx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"status":      "error",
 				"description": "invalid or expired token",
 			})

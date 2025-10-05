@@ -143,7 +143,10 @@ func (r *Repository) calculateDeBroglieLengthsForRequest(requestID uint) error {
 	}
 
 	for _, calc := range calculations {
-		wavelength := r.calculateDeBroglieWavelength(calc.Particle.Mass, calc.Speed)
+		if calc.Speed == nil {
+			continue
+		}
+		wavelength := r.calculateDeBroglieWavelength(calc.Particle.Mass, *calc.Speed)
 		err = r.db.Model(&ds.DeBroglieCalculation{}).Where("id = ?", calc.ID).Update("de_broglie_length", &wavelength).Error
 		if err != nil {
 			return err
@@ -153,12 +156,10 @@ func (r *Repository) calculateDeBroglieLengthsForRequest(requestID uint) error {
 }
 
 func (r *Repository) AddDeBroglieCalculationToRequest(requestID uint, particleID uint) error {
-	speed := 1000.0
-
 	deBroglieCalculation := ds.DeBroglieCalculation{
 		RequestDeBroglieCalculationID: requestID,
 		ParticleID:                    particleID,
-		Speed:                         speed,
+		Speed:                         nil,
 		DeBroglieLength:               nil,
 	}
 	err := r.db.Create(&deBroglieCalculation).Error
@@ -194,6 +195,17 @@ func (r *Repository) FormDeBroglieRequestDraft(id uint, creatorID uuid.UUID) err
 	if len(calcs) == 0 {
 		return fmt.Errorf("заявка пуста")
 	}
+	
+	if draft.Name == nil {
+		return fmt.Errorf("нельзя сформировать заявку без названия")
+	}
+	
+	for _, calc := range calcs {
+		if calc.Speed == nil {
+			return fmt.Errorf("нельзя сформировать заявку: у частицы %s не указана скорость", calc.Particle.Name)
+		}
+	}
+	
 	newStatus := ds.RequestStatusFormed
 	return r.UpdateDeBroglieRequestStatus(id, newStatus, nil)
 }
@@ -221,7 +233,7 @@ func (r *Repository) CompleteDeBroglieRequest(id uint, approve bool, moderatorID
 
 func (r *Repository) CreateRequestDeBroglieCalculationWithParticle(particleID uint, creatorID uuid.UUID) (ds.RequestDeBroglieCalculation, error) {
 	requestDeBroglieCalculation := ds.RequestDeBroglieCalculation{
-		Name:      "Эксперимент",
+		Name:      nil,
 		Status:    ds.RequestStatusDraft,
 		CreatorID: creatorID,
 	}
