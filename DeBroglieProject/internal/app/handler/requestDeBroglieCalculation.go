@@ -258,22 +258,24 @@ func (h *Handler) UpdateRequestStatusAPI(ctx *gin.Context) {
 // @Description Возвращает информацию о черновике заявки пользователя
 // @Tags RequestDeBroglieCalculations
 // @Produce json
-// @Security BearerAuth
 // @Success 200 {object} deBroglieDraftInfoResponse "Информация о черновике"
-// @Failure 401 {object} errorResponse "Требуется авторизация"
-// @Failure 500 {object} errorResponse "Внутренняя ошибка сервера"
 // @Router /requestdebrogliecalculations/debrogliecart [get]
 func (h *Handler) DraftRequestDeBroglieCalculationInfoAPI(ctx *gin.Context) {
-	// Получаем UUID пользователя из контекста
 	userUUID, exists := ctx.Get("user_uuid")
 	if !exists {
-		h.errorHandler(ctx, http.StatusUnauthorized, errors.New("user not authenticated"))
+		ctx.JSON(http.StatusOK, gin.H{
+			"draft_id":      0,
+			"particles_cnt": 0,
+		})
 		return
 	}
 
 	creatorID, ok := userUUID.(uuid.UUID)
 	if !ok {
-		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
+		ctx.JSON(http.StatusOK, gin.H{
+			"draft_id":      0,
+			"particles_cnt": 0,
+		})
 		return
 	}
 

@@ -9,6 +9,7 @@ import (
 	"DeBroglieProject/internal/pkg"
 	"context"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
@@ -28,6 +29,13 @@ import (
 
 func main() {
 	router := gin.Default()
+
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"http://localhost:3000"}
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"}
+	corsConfig.AllowCredentials = true
+	router.Use(cors.New(corsConfig))
 
 	router.MaxMultipartMemory = 8 << 20 // 8 MB
 

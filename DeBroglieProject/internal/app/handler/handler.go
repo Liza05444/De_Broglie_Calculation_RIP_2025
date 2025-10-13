@@ -38,6 +38,7 @@ func (h *Handler) RegisterAPI(router *gin.Engine) {
 func (h *Handler) registerPublicEndpoints(api *gin.RouterGroup) {
 	api.GET("/particles", h.GetParticlesAPI)
 	api.GET("/particles/:id", h.GetParticleAPI)
+	api.GET("/requestdebrogliecalculations/debrogliecart", h.DraftRequestDeBroglieCalculationInfoAPI)
 }
 
 func (h *Handler) registerProfileEndpoints(api *gin.RouterGroup) {
@@ -77,7 +78,6 @@ func (h *Handler) registerDeBroglieRequestEndpoints(api *gin.RouterGroup) {
 	deBroglieRequests := api.Group("/requestdebrogliecalculations")
 	deBroglieRequests.Use(h.AuthCheck(false))
 	{
-		deBroglieRequests.GET("/debrogliecart", h.DraftRequestDeBroglieCalculationInfoAPI)
 		deBroglieRequests.GET("", h.GetRequestDeBroglieCalculationsAPI)
 		deBroglieRequests.GET("/:id", h.GetRequestDeBroglieCalculationAPI)
 		deBroglieRequests.PUT("/:id", h.UpdateRequestDeBroglieCalculationAPI)
