@@ -9,5 +9,5 @@ type User struct {
 	Email       string    `gorm:"type:varchar(25);unique;not null" json:"email"`
 	Name        string    `gorm:"type:varchar(50);not null" json:"name"`
 	Password    string    `gorm:"type:varchar(255);not null" json:"-"`
-	IsModerator bool      `gorm:"type:boolean;default:false" json:"is_moderator"`
+	IsProfessor bool      `gorm:"type:boolean;default:false" json:"is_professor"`
 }

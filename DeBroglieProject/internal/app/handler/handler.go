@@ -10,18 +10,20 @@ import (
 )
 
 type Handler struct {
-	Repository *repository.Repository
-	Config     *config.Config
-	AuthCheck  func(requireModerator bool) gin.HandlerFunc
-	Redis      *redis.Client
+	Repository        *repository.Repository
+	Config            *config.Config
+	AuthCheck         func(requireModerator bool) gin.HandlerFunc
+	OptionalAuthCheck func() gin.HandlerFunc
+	Redis             *redis.Client
 }
 
-func NewHandler(r *repository.Repository, cfg *config.Config, authCheck func(requireModerator bool) gin.HandlerFunc, redisClient *redis.Client) *Handler {
+func NewHandler(r *repository.Repository, cfg *config.Config, authCheck func(requireModerator bool) gin.HandlerFunc, optionalAuthCheck func() gin.HandlerFunc, redisClient *redis.Client) *Handler {
 	return &Handler{
-		Repository: r,
-		Config:     cfg,
-		AuthCheck:  authCheck,
-		Redis:      redisClient,
+		Repository:        r,
+		Config:            cfg,
+		AuthCheck:         authCheck,
+		OptionalAuthCheck: optionalAuthCheck,
+		Redis:             redisClient,
 	}
 }
 
@@ -38,7 +40,12 @@ func (h *Handler) RegisterAPI(router *gin.Engine) {
 func (h *Handler) registerPublicEndpoints(api *gin.RouterGroup) {
 	api.GET("/particles", h.GetParticlesAPI)
 	api.GET("/particles/:id", h.GetParticleAPI)
-	api.GET("/requestdebrogliecalculations/debrogliecart", h.DraftRequestDeBroglieCalculationInfoAPI)
+	
+	debroglieCart := api.Group("/requestdebrogliecalculations")
+	debroglieCart.Use(h.OptionalAuthCheck())
+	{
+		debroglieCart.GET("/debrogliecart", h.DraftRequestDeBroglieCalculationInfoAPI)
+	}
 }
 
 func (h *Handler) registerProfileEndpoints(api *gin.RouterGroup) {

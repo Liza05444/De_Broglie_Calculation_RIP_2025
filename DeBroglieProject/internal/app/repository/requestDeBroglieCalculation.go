@@ -10,11 +10,11 @@ import (
 	"gorm.io/gorm"
 )
 
-func (r *Repository) GetRequestDeBroglieCalculations(status *ds.RequestStatus, startDate, endDate *time.Time, researcherID uuid.UUID, isModerator bool) ([]ds.RequestDeBroglieCalculation, error) {
+func (r *Repository) GetRequestDeBroglieCalculations(status *ds.RequestStatus, startDate, endDate *time.Time, researcherID uuid.UUID, isProfessor bool) ([]ds.RequestDeBroglieCalculation, error) {
 	var requests []ds.RequestDeBroglieCalculation
 	query := r.db.Where("status != ? AND status != ?", ds.RequestStatusDeleted, ds.RequestStatusDraft)
 
-	if !isModerator {
+	if !isProfessor {
 		query = query.Where("researcher_id = ?", researcherID)
 	}
 

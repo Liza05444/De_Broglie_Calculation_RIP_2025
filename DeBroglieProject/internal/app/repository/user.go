@@ -20,7 +20,7 @@ func (r *Repository) GetUserByEmail(email string) (ds.User, error) {
 
 func (r *Repository) UpdateUserByUUID(uuid uuid.UUID, user ds.User) error {
 	updates := map[string]interface{}{"name": user.Name}
-	updates["is_moderator"] = user.IsModerator
+	updates["is_professor"] = user.IsProfessor
 	return r.db.Model(&ds.User{}).Where("id = ?", uuid).Updates(updates).Error
 }
 

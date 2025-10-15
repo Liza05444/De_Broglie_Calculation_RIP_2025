@@ -59,19 +59,19 @@ func (h *Handler) GetRequestDeBroglieCalculationsAPI(ctx *gin.Context) {
 		return
 	}
 
-	isModerator, exists := ctx.Get("is_moderator")
+	isProfessor, exists := ctx.Get("is_professor")
 	if !exists {
 		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("moderator status not found in context"))
 		return
 	}
 
-	moderatorStatus, ok := isModerator.(bool)
+	professorStatus, ok := isProfessor.(bool)
 	if !ok {
 		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid moderator status in context"))
 		return
 	}
 
-	requests, err := h.Repository.GetRequestDeBroglieCalculations(status, startDate, endDate, researcherID, moderatorStatus)
+	requests, err := h.Repository.GetRequestDeBroglieCalculations(status, startDate, endDate, researcherID, professorStatus)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return

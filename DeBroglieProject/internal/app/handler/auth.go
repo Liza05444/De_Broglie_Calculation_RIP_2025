@@ -112,7 +112,7 @@ func (h *Handler) Login(gCtx *gin.Context) {
 				Issuer:    "bitop-admin",
 			},
 			UserUUID:    user.ID,
-			IsModerator: user.IsModerator,
+			IsProfessor: user.IsProfessor,
 		})
 
 		if token == nil {
@@ -199,7 +199,7 @@ func (h *Handler) Register(gCtx *gin.Context) {
 
 	user := &ds.User{
 		ID:          uuid.New(),
-		IsModerator: false,
+		IsProfessor: false,
 		Email:       req.Email,
 		Name:        req.Name,
 		Password:    hashedPassword,

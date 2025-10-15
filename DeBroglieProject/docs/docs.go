@@ -1317,7 +1317,7 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "is_moderator": {
+                "is_professor": {
                     "type": "boolean"
                 },
                 "name": {

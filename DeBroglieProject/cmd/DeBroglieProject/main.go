@@ -58,6 +58,9 @@ func main() {
 	hand := handler.NewHandler(rep, conf, func(requireModerator bool) gin.HandlerFunc {
 		tempApp := pkg.NewApp(conf, router, nil, redisClient)
 		return tempApp.WithAuthCheck(requireModerator)
+	}, func() gin.HandlerFunc {
+		tempApp := pkg.NewApp(conf, router, nil, redisClient)
+		return tempApp.WithOptionalAuthCheck()
 	}, redisClient)
 
 	application := pkg.NewApp(conf, router, hand, redisClient)

@@ -51,14 +51,43 @@ func (a *Application) WithAuthCheck(requireModerator bool) func(ctx *gin.Context
 		myClaims := token.Claims.(*ds.JWTClaims)
 
 		gCtx.Set("user_uuid", myClaims.UserUUID)
-		gCtx.Set("is_moderator", myClaims.IsModerator)
+		gCtx.Set("is_professor", myClaims.IsProfessor)
 
-		if requireModerator && !myClaims.IsModerator {
+		if requireModerator && !myClaims.IsProfessor {
 			gCtx.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"status":      "error",
 				"description": "moderator permissions required for this operation",
 			})
 			return
 		}
+	}
+}
+
+func (a *Application) WithOptionalAuthCheck() func(ctx *gin.Context) {
+	return func(gCtx *gin.Context) {
+		jwtStr := gCtx.GetHeader("Authorization")
+		if !strings.HasPrefix(jwtStr, jwtPrefix) {
+			return
+		}
+
+		jwtStr = jwtStr[len(jwtPrefix):]
+
+		ctx := context.Background()
+		_, err := a.Redis.GetClient().Get(ctx, "blacklist:"+jwtStr).Result()
+		if err == nil {
+			return
+		}
+
+		token, err := jwt.ParseWithClaims(jwtStr, &ds.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return []byte(a.Config.JWT.Token), nil
+		})
+		if err != nil {
+			return
+		}
+
+		myClaims := token.Claims.(*ds.JWTClaims)
+
+		gCtx.Set("user_uuid", myClaims.UserUUID)
+		gCtx.Set("is_professor", myClaims.IsProfessor)
 	}
 }

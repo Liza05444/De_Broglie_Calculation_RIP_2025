@@ -8,5 +8,5 @@ import (
 type JWTClaims struct {
 	jwt.RegisteredClaims
 	UserUUID    uuid.UUID `json:"user_uuid"`
-	IsModerator bool      `json:"is_moderator"`
+	IsProfessor bool      `json:"is_professor"`
 }
