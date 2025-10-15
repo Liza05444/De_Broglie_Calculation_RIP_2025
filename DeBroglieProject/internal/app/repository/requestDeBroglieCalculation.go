@@ -10,12 +10,12 @@ import (
 	"gorm.io/gorm"
 )
 
-func (r *Repository) GetRequestDeBroglieCalculations(status *ds.RequestStatus, startDate, endDate *time.Time, creatorID uuid.UUID, isModerator bool) ([]ds.RequestDeBroglieCalculation, error) {
+func (r *Repository) GetRequestDeBroglieCalculations(status *ds.RequestStatus, startDate, endDate *time.Time, researcherID uuid.UUID, isModerator bool) ([]ds.RequestDeBroglieCalculation, error) {
 	var requests []ds.RequestDeBroglieCalculation
 	query := r.db.Where("status != ? AND status != ?", ds.RequestStatusDeleted, ds.RequestStatusDraft)
 
 	if !isModerator {
-		query = query.Where("creator_id = ?", creatorID)
+		query = query.Where("researcher_id = ?", researcherID)
 	}
 
 	if status != nil {
@@ -63,7 +63,7 @@ func (r *Repository) UpdateRequestDeBroglieCalculation(id uint, request ds.Reque
 	return r.db.Model(&existingRequest).Updates(request).Error
 }
 
-func (r *Repository) UpdateDeBroglieRequestStatus(id uint, newStatus ds.RequestStatus, moderatorID *uuid.UUID) error {
+func (r *Repository) UpdateDeBroglieRequestStatus(id uint, newStatus ds.RequestStatus, professorID *uuid.UUID) error {
 	var request ds.RequestDeBroglieCalculation
 	err := r.db.Where("id = ? AND status != ?", id, ds.RequestStatusDeleted).First(&request).Error
 	if err != nil {
@@ -83,7 +83,7 @@ func (r *Repository) UpdateDeBroglieRequestStatus(id uint, newStatus ds.RequestS
 		updates["formed_at"] = time.Now()
 	case ds.RequestStatusCompleted, ds.RequestStatusRejected:
 		updates["completed_at"] = time.Now()
-		updates["moderator_id"] = *moderatorID
+		updates["professor_id"] = *professorID
 	}
 
 	return r.db.Model(&ds.RequestDeBroglieCalculation{}).Where("id = ?", id).Updates(updates).Error
@@ -111,9 +111,9 @@ func (r *Repository) isValidStatusTransition(current, new ds.RequestStatus) bool
 	return false
 }
 
-func (r *Repository) GetDraftRequestDeBroglieCalculationInfo(creatorID uuid.UUID) (ds.RequestDeBroglieCalculation, []ds.DeBroglieCalculation, error) {
+func (r *Repository) GetDraftRequestDeBroglieCalculationInfo(researcherID uuid.UUID) (ds.RequestDeBroglieCalculation, []ds.DeBroglieCalculation, error) {
 	requestDeBroglieCalculation := ds.RequestDeBroglieCalculation{}
-	err := r.db.Where("creator_id = ? AND status = ?", creatorID, ds.RequestStatusDraft).First(&requestDeBroglieCalculation).Error
+	err := r.db.Where("researcher_id = ? AND status = ?", researcherID, ds.RequestStatusDraft).First(&requestDeBroglieCalculation).Error
 	if err != nil {
 		return ds.RequestDeBroglieCalculation{}, nil, err
 	}
@@ -187,8 +187,8 @@ func (r *Repository) DeleteRequestDeBroglieCalculation(id uint) (int64, error) {
 	return result.RowsAffected, nil
 }
 
-func (r *Repository) FormDeBroglieRequestDraft(id uint, creatorID uuid.UUID) error {
-	draft, calcs, err := r.GetDraftRequestDeBroglieCalculationInfo(creatorID)
+func (r *Repository) FormDeBroglieRequestDraft(id uint, researcherID uuid.UUID) error {
+	draft, calcs, err := r.GetDraftRequestDeBroglieCalculationInfo(researcherID)
 	if err != nil || draft.ID != id {
 		return fmt.Errorf("доступен только черновик текущего пользователя")
 	}
@@ -210,13 +210,13 @@ func (r *Repository) FormDeBroglieRequestDraft(id uint, creatorID uuid.UUID) err
 	return r.UpdateDeBroglieRequestStatus(id, newStatus, nil)
 }
 
-func (r *Repository) CompleteDeBroglieRequest(id uint, approve bool, moderatorID uuid.UUID) error {
+func (r *Repository) CompleteDeBroglieRequest(id uint, approve bool, professorID uuid.UUID) error {
 	status := ds.RequestStatusRejected
 	if approve {
 		status = ds.RequestStatusCompleted
 	}
 
-	err := r.UpdateDeBroglieRequestStatus(id, status, &moderatorID)
+	err := r.UpdateDeBroglieRequestStatus(id, status, &professorID)
 	if err != nil {
 		return err
 	}
@@ -231,11 +231,11 @@ func (r *Repository) CompleteDeBroglieRequest(id uint, approve bool, moderatorID
 	return nil
 }
 
-func (r *Repository) CreateRequestDeBroglieCalculationWithParticle(particleID uint, creatorID uuid.UUID) (ds.RequestDeBroglieCalculation, error) {
+func (r *Repository) CreateRequestDeBroglieCalculationWithParticle(particleID uint, researcherID uuid.UUID) (ds.RequestDeBroglieCalculation, error) {
 	requestDeBroglieCalculation := ds.RequestDeBroglieCalculation{
-		Name:      nil,
-		Status:    ds.RequestStatusDraft,
-		CreatorID: creatorID,
+		Name:         nil,
+		Status:       ds.RequestStatusDraft,
+		ResearcherID: researcherID,
 	}
 	err := r.db.Create(&requestDeBroglieCalculation).Error
 	if err != nil {

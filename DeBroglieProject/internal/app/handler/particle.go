@@ -334,15 +334,15 @@ func (h *Handler) AddParticleToRequestDeBroglieCalculationAPI(ctx *gin.Context) 
 		return
 	}
 
-	creatorID, ok := userUUID.(uuid.UUID)
+	researcherID, ok := userUUID.(uuid.UUID)
 	if !ok {
 		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
 		return
 	}
 
-	draft, _, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo(creatorID)
+	draft, _, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo(researcherID)
 	if err != nil {
-		_, createErr := h.Repository.CreateRequestDeBroglieCalculationWithParticle(uint(id), creatorID)
+		_, createErr := h.Repository.CreateRequestDeBroglieCalculationWithParticle(uint(id), researcherID)
 		if createErr != nil {
 			if strings.Contains(createErr.Error(), "duplicate key value violates unique constraint") {
 				h.errorHandler(ctx, http.StatusBadRequest, fmt.Errorf("частица уже добавлена в заявку"))

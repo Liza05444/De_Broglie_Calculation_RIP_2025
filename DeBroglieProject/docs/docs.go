@@ -1274,7 +1274,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "creator_id": {
+                "researcher_id": {
                     "type": "string"
                 },
                 "formed_at": {
@@ -1283,7 +1283,7 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "moderator_id": {
+                "professor_id": {
                     "type": "string"
                 },
                 "name": {

@@ -22,6 +22,6 @@ type RequestDeBroglieCalculation struct {
 	CreatedAt   time.Time  `gorm:"not null" json:"created_at"`
 	FormedAt    *time.Time `gorm:"default:null" json:"formed_at,omitempty"`
 	CompletedAt *time.Time `gorm:"default:null" json:"completed_at,omitempty"`
-	CreatorID   uuid.UUID  `gorm:"type:uuid;not null" json:"creator_id"`
-	ModeratorID *uuid.UUID `gorm:"type:uuid" json:"moderator_id,omitempty"`
+	ResearcherID   uuid.UUID  `gorm:"type:uuid;not null" json:"researcher_id"`
+	ProfessorID *uuid.UUID `gorm:"type:uuid" json:"professor_id,omitempty"`
 }

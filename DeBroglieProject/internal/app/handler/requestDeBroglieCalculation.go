@@ -53,7 +53,7 @@ func (h *Handler) GetRequestDeBroglieCalculationsAPI(ctx *gin.Context) {
 		return
 	}
 
-	creatorID, ok := userUUID.(uuid.UUID)
+	researcherID, ok := userUUID.(uuid.UUID)
 	if !ok {
 		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
 		return
@@ -71,7 +71,7 @@ func (h *Handler) GetRequestDeBroglieCalculationsAPI(ctx *gin.Context) {
 		return
 	}
 
-	requests, err := h.Repository.GetRequestDeBroglieCalculations(status, startDate, endDate, creatorID, moderatorStatus)
+	requests, err := h.Repository.GetRequestDeBroglieCalculations(status, startDate, endDate, researcherID, moderatorStatus)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
@@ -230,7 +230,7 @@ func (h *Handler) UpdateRequestStatusAPI(ctx *gin.Context) {
 
 	var req struct {
 		Status      ds.RequestStatus `json:"status" binding:"required"`
-		ModeratorID *uuid.UUID       `json:"moderator_id,omitempty"`
+		ProfessorID *uuid.UUID       `json:"professor_id,omitempty"`
 	}
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -238,7 +238,7 @@ func (h *Handler) UpdateRequestStatusAPI(ctx *gin.Context) {
 		return
 	}
 
-	err = h.Repository.UpdateDeBroglieRequestStatus(uint(id), req.Status, req.ModeratorID)
+	err = h.Repository.UpdateDeBroglieRequestStatus(uint(id), req.Status, req.ProfessorID)
 	if err != nil {
 		if err.Error() == "record not found" {
 			h.errorHandler(ctx, http.StatusNotFound, err)
@@ -270,7 +270,7 @@ func (h *Handler) DraftRequestDeBroglieCalculationInfoAPI(ctx *gin.Context) {
 		return
 	}
 
-	creatorID, ok := userUUID.(uuid.UUID)
+	researcherID, ok := userUUID.(uuid.UUID)
 	if !ok {
 		ctx.JSON(http.StatusOK, gin.H{
 			"draft_id":      0,
@@ -279,7 +279,7 @@ func (h *Handler) DraftRequestDeBroglieCalculationInfoAPI(ctx *gin.Context) {
 		return
 	}
 
-	draft, calcs, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo(creatorID)
+	draft, calcs, err := h.Repository.GetDraftRequestDeBroglieCalculationInfo(researcherID)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{
 			"draft_id":      0,
@@ -319,13 +319,13 @@ func (h *Handler) FormRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 		return
 	}
 
-	creatorID, ok := userUUID.(uuid.UUID)
+	researcherID, ok := userUUID.(uuid.UUID)
 	if !ok {
 		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
 		return
 	}
 
-	if err := h.Repository.FormDeBroglieRequestDraft(uint(id), creatorID); err != nil {
+	if err := h.Repository.FormDeBroglieRequestDraft(uint(id), researcherID); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
@@ -372,13 +372,13 @@ func (h *Handler) CompleteRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 		return
 	}
 
-	moderatorID, ok := userUUID.(uuid.UUID)
+	professorID, ok := userUUID.(uuid.UUID)
 	if !ok {
 		h.errorHandler(ctx, http.StatusInternalServerError, errors.New("invalid user UUID in context"))
 		return
 	}
 
-	if err := h.Repository.CompleteDeBroglieRequest(uint(id), req.Approve, moderatorID); err != nil {
+	if err := h.Repository.CompleteDeBroglieRequest(uint(id), req.Approve, professorID); err != nil {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
