@@ -34,7 +34,12 @@ func (h *Handler) RegisterAPI(router *gin.Engine) {
 		h.registerProfileEndpoints(api)
 		h.registerParticleEndpoints(api)
 		h.registerDeBroglieRequestEndpoints(api)
+		h.registerAsyncServiceEndpoints(api)
 	}
+}
+
+func (h *Handler) registerAsyncServiceEndpoints(api *gin.RouterGroup) {
+	api.PUT("/debrogliecalculations/:id/update-length", h.UpdateCalculationDeBroglieLengthAPI)
 }
 
 func (h *Handler) registerPublicEndpoints(api *gin.RouterGroup) {

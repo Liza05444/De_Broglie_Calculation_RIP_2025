@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -71,7 +73,7 @@ func (h *Handler) GetRequestDeBroglieCalculationsAPI(ctx *gin.Context) {
 		return
 	}
 
-	requests, err := h.Repository.GetRequestDeBroglieCalculations(status, startDate, endDate, researcherID, professorStatus)
+	requests, err := h.Repository.GetRequestDeBroglieCalculationsWithCount(status, startDate, endDate, researcherID, professorStatus)
 	if err != nil {
 		h.errorHandler(ctx, http.StatusInternalServerError, err)
 		return
@@ -329,6 +331,45 @@ func (h *Handler) FormRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 		h.errorHandler(ctx, http.StatusBadRequest, err)
 		return
 	}
+
+	_, calcs, err := h.Repository.GetRequestWithCalculations(uint(id))
+	if err != nil {
+		h.errorHandler(ctx, http.StatusInternalServerError, err)
+		return
+	}
+
+	var calculationsData []map[string]interface{}
+	for _, calc := range calcs {
+		if calc.Speed != nil {
+			calculationsData = append(calculationsData, map[string]interface{}{
+				"id":    calc.ID,
+				"mass":  calc.Particle.Mass,
+				"speed": *calc.Speed,
+			})
+		}
+	}
+
+	if len(calculationsData) > 0 {
+		asyncServiceURL := "http://127.0.0.1:8000"
+		requestData := map[string]interface{}{
+			"calculations": calculationsData,
+		}
+
+		jsonData, err := json.Marshal(requestData)
+		if err != nil {
+			fmt.Printf("Error marshaling request data: %v\n", err)
+		} else {
+			go func() {
+				resp, err := http.Post(asyncServiceURL, "application/json", bytes.NewBuffer(jsonData))
+				if err != nil {
+					fmt.Printf("Error calling async service: %v\n", err)
+					return
+				}
+				defer resp.Body.Close()
+			}()
+		}
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "заявка сформирована",
 	})

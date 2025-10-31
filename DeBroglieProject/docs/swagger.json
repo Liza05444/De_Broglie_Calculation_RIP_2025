@@ -10,7 +10,7 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:8080",
+    "host": "127.0.0.1:8080",
     "basePath": "/api",
     "paths": {
         "/debrogliecalculations/{id}/particle/{particleId}": {
@@ -145,6 +145,73 @@
                     },
                     "404": {
                         "description": "Заявка или частица не найдена",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/debrogliecalculations/{id}/update-length": {
+            "put": {
+                "description": "Обновляет длину волны де Бройля для расчета (вызывается асинхронным сервисом)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "DeBroglieCalculations"
+                ],
+                "summary": "Обновление длины волны де Бройля",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID расчета",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Длина волны и токен авторизации",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "de_broglie_length": {
+                                    "type": "number"
+                                },
+                                "token": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное обновление",
+                        "schema": {
+                            "$ref": "#/definitions/handler.successResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверные параметры или неверный токен",
+                        "schema": {
+                            "$ref": "#/definitions/handler.errorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Расчет не найден",
                         "schema": {
                             "$ref": "#/definitions/handler.errorResponse"
                         }
@@ -897,11 +964,6 @@
         },
         "/requestdebrogliecalculations/debrogliecart": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Возвращает информацию о черновике заявки пользователя",
                 "produces": [
                     "application/json"
@@ -915,18 +977,6 @@
                         "description": "Информация о черновике",
                         "schema": {
                             "$ref": "#/definitions/handler.deBroglieDraftInfoResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Требуется авторизация",
-                        "schema": {
-                            "$ref": "#/definitions/handler.errorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Внутренняя ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/handler.errorResponse"
                         }
                     }
                 }
@@ -1272,19 +1322,19 @@
                 "created_at": {
                     "type": "string"
                 },
-                "researcher_id": {
-                    "type": "string"
-                },
                 "formed_at": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
+                "name": {
+                    "type": "string"
+                },
                 "professor_id": {
                     "type": "string"
                 },
-                "name": {
+                "researcher_id": {
                     "type": "string"
                 },
                 "status": {
@@ -1315,13 +1365,13 @@
                 "email": {
                     "type": "string"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "is_professor": {
                     "type": "boolean"
                 },
                 "name": {
-                    "type": "string"
-                },
-                "uuid": {
                     "type": "string"
                 }
             }
@@ -1366,7 +1416,7 @@
         "handler.deBroglieRequestDetailResponse": {
             "type": "object",
             "properties": {
-                "debrogliecalculations": {
+                "calculations": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/handler.deBroglieCalculationDetail"

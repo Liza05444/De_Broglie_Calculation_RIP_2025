@@ -19,15 +19,15 @@ definitions:
         type: string
       created_at:
         type: string
-      researcher_id:
-        type: string
       formed_at:
         type: string
       id:
         type: integer
+      name:
+        type: string
       professor_id:
         type: string
-      name:
+      researcher_id:
         type: string
       status:
         $ref: '#/definitions/ds.RequestStatus'
@@ -50,11 +50,11 @@ definitions:
     properties:
       email:
         type: string
+      id:
+        type: string
       is_professor:
         type: boolean
       name:
-        type: string
-      uuid:
         type: string
     type: object
   handler.deBroglieCalculationDetail:
@@ -83,7 +83,7 @@ definitions:
     type: object
   handler.deBroglieRequestDetailResponse:
     properties:
-      debrogliecalculations:
+      calculations:
         items:
           $ref: '#/definitions/handler.deBroglieCalculationDetail'
         type: array
@@ -137,7 +137,7 @@ definitions:
       message:
         type: string
     type: object
-host: localhost:8080
+host: 127.0.0.1:8080
 info:
   contact: {}
   description: API для расчета длины волны де Бройля частиц
@@ -236,6 +236,51 @@ paths:
       security:
       - BearerAuth: []
       summary: Обновление скорости частицы
+      tags:
+      - DeBroglieCalculations
+  /debrogliecalculations/{id}/update-length:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет длину волны де Бройля для расчета (вызывается асинхронным
+        сервисом)
+      parameters:
+      - description: ID расчета
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Длина волны и токен авторизации
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            de_broglie_length:
+              type: number
+            token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное обновление
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверные параметры или неверный токен
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Расчет не найден
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Обновление длины волны де Бройля
       tags:
       - DeBroglieCalculations
   /particles:
@@ -920,16 +965,6 @@ paths:
           description: Информация о черновике
           schema:
             $ref: '#/definitions/handler.deBroglieDraftInfoResponse'
-        "401":
-          description: Требуется авторизация
-          schema:
-            $ref: '#/definitions/handler.errorResponse'
-        "500":
-          description: Внутренняя ошибка сервера
-          schema:
-            $ref: '#/definitions/handler.errorResponse'
-      security:
-      - BearerAuth: []
       summary: Информация о черновике заявки
       tags:
       - RequestDeBroglieCalculations

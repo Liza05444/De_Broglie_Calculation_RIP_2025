@@ -34,6 +34,51 @@ func (r *Repository) GetRequestDeBroglieCalculations(status *ds.RequestStatus, s
 	return requests, err
 }
 
+type RequestWithCalculatedCount struct {
+	ds.RequestDeBroglieCalculation
+	CalculatedCount int64 `json:"calculated_count"`
+}
+
+func (r *Repository) GetRequestDeBroglieCalculationsWithCount(status *ds.RequestStatus, startDate, endDate *time.Time, researcherID uuid.UUID, isProfessor bool) ([]RequestWithCalculatedCount, error) {
+	var requests []ds.RequestDeBroglieCalculation
+	query := r.db.Where("status != ? AND status != ?", ds.RequestStatusDeleted, ds.RequestStatusDraft)
+
+	if !isProfessor {
+		query = query.Where("researcher_id = ?", researcherID)
+	}
+
+	if status != nil {
+		query = query.Where("status = ?", *status)
+	}
+
+	if startDate != nil {
+		query = query.Where("formed_at >= ?", *startDate)
+	}
+
+	if endDate != nil {
+		query = query.Where("formed_at <= ?", *endDate)
+	}
+
+	err := query.Find(&requests).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var result []RequestWithCalculatedCount
+	for _, req := range requests {
+		count, err := r.CountCalculationsWithDeBroglieLength(req.ID)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, RequestWithCalculatedCount{
+			RequestDeBroglieCalculation: req,
+			CalculatedCount:             count,
+		})
+	}
+
+	return result, nil
+}
+
 func (r *Repository) GetRequestDeBroglieCalculation(id uint) (ds.RequestDeBroglieCalculation, error) {
 	var request ds.RequestDeBroglieCalculation
 	err := r.db.Where("id = ? AND status != ?", id, ds.RequestStatusDeleted).First(&request).Error
@@ -83,7 +128,9 @@ func (r *Repository) UpdateDeBroglieRequestStatus(id uint, newStatus ds.RequestS
 		updates["formed_at"] = time.Now()
 	case ds.RequestStatusCompleted, ds.RequestStatusRejected:
 		updates["completed_at"] = time.Now()
-		updates["professor_id"] = *professorID
+		if professorID != nil {
+			updates["professor_id"] = *professorID
+		}
 	}
 
 	return r.db.Model(&ds.RequestDeBroglieCalculation{}).Where("id = ?", id).Updates(updates).Error
@@ -127,34 +174,6 @@ func (r *Repository) GetDraftRequestDeBroglieCalculationInfo(researcherID uuid.U
 	return requestDeBroglieCalculation, deBroglieCalculations, nil
 }
 
-func (r *Repository) calculateDeBroglieWavelength(mass float64, velocity float64) float64 {
-	const planckConstant = 6.62607015e-34
-	if mass <= 0 || velocity <= 0 {
-		return 0
-	}
-	return planckConstant / (mass * velocity)
-}
-
-func (r *Repository) calculateDeBroglieLengthsForRequest(requestID uint) error {
-	var calculations []ds.DeBroglieCalculation
-	err := r.db.Preload("Particle").Where("request_de_broglie_calculation_id = ?", requestID).Find(&calculations).Error
-	if err != nil {
-		return err
-	}
-
-	for _, calc := range calculations {
-		if calc.Speed == nil {
-			continue
-		}
-		wavelength := r.calculateDeBroglieWavelength(calc.Particle.Mass, *calc.Speed)
-		err = r.db.Model(&ds.DeBroglieCalculation{}).Where("id = ?", calc.ID).Update("de_broglie_length", &wavelength).Error
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (r *Repository) AddDeBroglieCalculationToRequest(requestID uint, particleID uint) error {
 	deBroglieCalculation := ds.DeBroglieCalculation{
 		RequestDeBroglieCalculationID: requestID,
@@ -195,17 +214,17 @@ func (r *Repository) FormDeBroglieRequestDraft(id uint, researcherID uuid.UUID) 
 	if len(calcs) == 0 {
 		return fmt.Errorf("заявка пуста")
 	}
-	
+
 	if draft.Name == nil {
 		return fmt.Errorf("нельзя сформировать заявку без названия")
 	}
-	
+
 	for _, calc := range calcs {
 		if calc.Speed == nil {
 			return fmt.Errorf("нельзя сформировать заявку: у частицы %s не указана скорость", calc.Particle.Name)
 		}
 	}
-	
+
 	newStatus := ds.RequestStatusFormed
 	return r.UpdateDeBroglieRequestStatus(id, newStatus, nil)
 }
@@ -219,13 +238,6 @@ func (r *Repository) CompleteDeBroglieRequest(id uint, approve bool, professorID
 	err := r.UpdateDeBroglieRequestStatus(id, status, &professorID)
 	if err != nil {
 		return err
-	}
-
-	if approve && status == ds.RequestStatusCompleted {
-		err = r.calculateDeBroglieLengthsForRequest(id)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
