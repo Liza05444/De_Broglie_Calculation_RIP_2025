@@ -352,7 +352,7 @@ func (h *Handler) FormRequestDeBroglieCalculationAPI(ctx *gin.Context) {
 	if len(calculationsData) > 0 {
 		asyncServiceURL := "http://127.0.0.1:8000"
 		requestData := map[string]interface{}{
-			"calculations": calculationsData,
+			"de_broglie_calculations": calculationsData,
 		}
 
 		jsonData, err := json.Marshal(requestData)
