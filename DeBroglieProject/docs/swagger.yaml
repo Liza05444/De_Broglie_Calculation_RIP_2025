@@ -1,0 +1,980 @@
+basePath: /api
+definitions:
+  ds.Particle:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      mass:
+        type: number
+      name:
+        type: string
+    type: object
+  ds.RequestDeBroglieCalculation:
+    properties:
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      formed_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      professor_id:
+        type: string
+      researcher_id:
+        type: string
+      status:
+        $ref: '#/definitions/ds.RequestStatus'
+    type: object
+  ds.RequestStatus:
+    enum:
+    - черновик
+    - удалён
+    - сформирован
+    - завершён
+    - отклонён
+    type: string
+    x-enum-varnames:
+    - RequestStatusDraft
+    - RequestStatusDeleted
+    - RequestStatusFormed
+    - RequestStatusCompleted
+    - RequestStatusRejected
+  ds.User:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      is_professor:
+        type: boolean
+      name:
+        type: string
+    type: object
+  handler.deBroglieCalculationDetail:
+    properties:
+      de_broglie_length:
+        type: number
+      id:
+        type: integer
+      particle_id:
+        type: integer
+      particle_image:
+        type: string
+      particle_mass:
+        type: number
+      particle_name:
+        type: string
+      speed:
+        type: number
+    type: object
+  handler.deBroglieDraftInfoResponse:
+    properties:
+      draft_id:
+        type: integer
+      particles_cnt:
+        type: integer
+    type: object
+  handler.deBroglieRequestDetailResponse:
+    properties:
+      calculations:
+        items:
+          $ref: '#/definitions/handler.deBroglieCalculationDetail'
+        type: array
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      formed_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.errorResponse:
+    properties:
+      description:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.loginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  handler.loginResp:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      token_type:
+        type: string
+    type: object
+  handler.registerReq:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  handler.successResponse:
+    properties:
+      message:
+        type: string
+    type: object
+host: 127.0.0.1:8080
+info:
+  contact: {}
+  description: API для расчета длины волны де Бройля частиц
+  title: De Broglie Project API
+  version: "1.0"
+paths:
+  /debrogliecalculations/{id}/particle/{particleId}:
+    delete:
+      description: Удаляет частицу из черновика заявки
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID частицы
+        in: path
+        name: particleId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное удаление
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверные параметры или статус заявки
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Заявка или частица не найдена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление частицы из заявки
+      tags:
+      - DeBroglieCalculations
+    put:
+      consumes:
+      - application/json
+      description: Обновляет скорость частицы в расчете де Бройля
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID частицы
+        in: path
+        name: particleId
+        required: true
+        type: integer
+      - description: Новая скорость
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            speed:
+              type: number
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное обновление
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверные параметры или статус заявки
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Заявка не найдена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление скорости частицы
+      tags:
+      - DeBroglieCalculations
+  /debrogliecalculations/{id}/update-length:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет длину волны де Бройля для расчета (вызывается асинхронным
+        сервисом)
+      parameters:
+      - description: ID расчета
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Длина волны и токен авторизации
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            de_broglie_length:
+              type: number
+            token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное обновление
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверные параметры или неверный токен
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Расчет не найден
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Обновление длины волны де Бройля
+      tags:
+      - DeBroglieCalculations
+  /particles:
+    get:
+      description: Возвращает список всех частиц с возможностью фильтрации по названию
+      parameters:
+      - description: Название частицы для фильтрации
+        in: query
+        name: particle
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список частиц
+          schema:
+            items:
+              $ref: '#/definitions/ds.Particle'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Получение списка частиц
+      tags:
+      - Particles
+    post:
+      consumes:
+      - application/json
+      description: Создает новую частицу (только для модераторов)
+      parameters:
+      - description: Данные частицы
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            description:
+              type: string
+            mass:
+              type: number
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Созданная частица
+          schema:
+            $ref: '#/definitions/ds.Particle'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "403":
+          description: Недостаточно прав
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Создание новой частицы
+      tags:
+      - Particles
+  /particles/{id}:
+    delete:
+      description: Удаляет частицу и связанное с ней изображение (только для модераторов)
+      parameters:
+      - description: ID частицы
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное удаление
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверный ID
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "403":
+          description: Недостаточно прав
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Частица не найдена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление частицы
+      tags:
+      - Particles
+    get:
+      description: Возвращает информацию о частице по её ID
+      parameters:
+      - description: ID частицы
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о частице
+          schema:
+            $ref: '#/definitions/ds.Particle'
+        "400":
+          description: Неверный ID
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Частица не найдена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Получение частицы по ID
+      tags:
+      - Particles
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о частице (только для модераторов)
+      parameters:
+      - description: ID частицы
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновленные данные частицы
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            description:
+              type: string
+            mass:
+              type: number
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное обновление
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "403":
+          description: Недостаточно прав
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Частица не найдена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление частицы
+      tags:
+      - Particles
+  /particles/{id}/addParticle:
+    post:
+      description: Добавляет частицу в черновик заявки на расчет де Бройля
+      parameters:
+      - description: ID частицы
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное добавление
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверный ID или частица уже добавлена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Добавление частицы в заявку
+      tags:
+      - Particles
+  /particles/{id}/image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Загружает изображение для частицы в MinIO (только для модераторов)
+      parameters:
+      - description: ID частицы
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Файл изображения
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная загрузка
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "403":
+          description: Недостаточно прав
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Частица не найдена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Загрузка изображения частицы
+      tags:
+      - Particles
+  /profile/login:
+    post:
+      consumes:
+      - application/json
+      description: Авторизация пользователя по email и паролю
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.loginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная авторизация
+          schema:
+            $ref: '#/definitions/handler.loginResp'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Неверный email или пароль
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "403":
+          description: Доступ запрещен
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Авторизация пользователя
+      tags:
+      - Profile
+  /profile/logout:
+    post:
+      consumes:
+      - application/json
+      description: Добавление токена в черный список для выхода из системы
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный выход
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Отсутствует или неверный заголовок авторизации
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Ошибка при выходе
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Выход пользователя из системы
+      tags:
+      - Profile
+  /profile/me:
+    get:
+      description: Возвращает информацию о авторизованном пользователе
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о пользователе
+          schema:
+            $ref: '#/definitions/ds.User'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение информации о текущем пользователе
+      tags:
+      - Profile
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о авторизованном пользователе
+      parameters:
+      - description: Данные для обновления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ds.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Обновленная информация о пользователе
+          schema:
+            $ref: '#/definitions/ds.User'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление информации о текущем пользователе
+      tags:
+      - Profile
+  /profile/register:
+    post:
+      consumes:
+      - application/json
+      description: Создание нового пользователя в системе
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.registerReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная регистрация
+          schema:
+            $ref: '#/definitions/ds.User'
+        "400":
+          description: Неверный формат запроса или пустые поля
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "409":
+          description: Пользователь с таким email уже существует
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      summary: Регистрация нового пользователя
+      tags:
+      - Profile
+  /requestdebrogliecalculations:
+    get:
+      description: Возвращает список заявок на расчет с возможностью фильтрации
+      parameters:
+      - description: Статус заявки
+        in: query
+        name: status
+        type: string
+      - description: Начальная дата (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: Конечная дата (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список заявок
+          schema:
+            items:
+              $ref: '#/definitions/ds.RequestDeBroglieCalculation'
+            type: array
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение списка заявок
+      tags:
+      - RequestDeBroglieCalculations
+  /requestdebrogliecalculations/{id}:
+    delete:
+      description: Удаляет заявку на расчет
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное удаление
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверный ID
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Заявка не найдена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Удаление заявки
+      tags:
+      - RequestDeBroglieCalculations
+    get:
+      description: Возвращает детальную информацию о заявке с расчетами
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Детальная информация о заявке
+          schema:
+            $ref: '#/definitions/handler.deBroglieRequestDetailResponse'
+        "400":
+          description: Неверный ID
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Заявка не найдена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Получение заявки по ID
+      tags:
+      - RequestDeBroglieCalculations
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о заявке
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Обновленные данные заявки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/ds.RequestDeBroglieCalculation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное обновление
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "404":
+          description: Заявка не найдена
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Обновление заявки
+      tags:
+      - RequestDeBroglieCalculations
+  /requestdebrogliecalculations/{id}/complete:
+    put:
+      consumes:
+      - application/json
+      description: Одобряет или отклоняет заявку (только для модераторов)
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Решение модератора
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            approve:
+              type: boolean
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное завершение
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "403":
+          description: Недостаточно прав
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Завершение заявки модератором
+      tags:
+      - RequestDeBroglieCalculations
+  /requestdebrogliecalculations/{id}/form:
+    put:
+      description: Переводит черновик заявки в статус "сформирована"
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное формирование
+          schema:
+            $ref: '#/definitions/handler.successResponse'
+        "400":
+          description: Неверный ID или статус заявки
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "401":
+          description: Требуется авторизация
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/handler.errorResponse'
+      security:
+      - BearerAuth: []
+      summary: Формирование заявки
+      tags:
+      - RequestDeBroglieCalculations
+  /requestdebrogliecalculations/debrogliecart:
+    get:
+      description: Возвращает информацию о черновике заявки пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о черновике
+          schema:
+            $ref: '#/definitions/handler.deBroglieDraftInfoResponse'
+      summary: Информация о черновике заявки
+      tags:
+      - RequestDeBroglieCalculations
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
